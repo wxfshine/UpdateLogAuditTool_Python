@@ -1,0 +1,75 @@
+﻿import sys
+import win32cred
+
+from office365.azure_env import AzureEnvironment
+from office365.runtime.auth.user_credential import UserCredential
+from office365.sharepoint.client_context import ClientContext
+
+
+CREDENTIAL_TARGET = "cmgos-my.sharepoint.cn"
+SITE_URL = "https://cmgos.sharepoint.cn/sites/RD"
+FOLDER_PATH = "/Shared Documents"
+TARGET_SUBFOLDER = "17.B包环境和操作历史状态"
+
+
+def read_windows_credential(target_name: str) -> tuple[str, str]:
+    credential = win32cred.CredRead(target_name, win32cred.CRED_TYPE_GENERIC)
+    username = credential.get("UserName")
+    password_blob = credential.get("CredentialBlob", b"")
+
+    if not username:
+        raise ValueError(f"Windows 凭据 '{target_name}' 中未找到用户名")
+
+    if isinstance(password_blob, bytes):
+        password = password_blob.decode("utf-16-le").rstrip("\x00")
+    else:
+        password = str(password_blob)
+
+    if not password:
+        raise ValueError(f"Windows 凭据 '{target_name}' 中未找到密码")
+
+    return username, password
+
+
+def create_context(site_url: str, username: str, password: str) -> ClientContext:
+    return ClientContext(site_url, environment=AzureEnvironment.China).with_credentials(
+        UserCredential(username, password)
+    )
+
+
+def print_folder_tree(folder, indent: int = 0) -> None:
+    prefix = "    " * indent
+    folder_name = folder.name or "(未命名文件夹)"
+    print(f"{prefix}[Folder] {folder_name}")
+
+    child_folders = folder.folders.get().execute_query()
+    files = folder.files.get().execute_query()
+
+    for child_folder in child_folders:
+        print_folder_tree(child_folder, indent + 1)
+
+    for file_item in files:
+        print(f"{'    ' * (indent + 1)}[File] {file_item.name}")
+
+
+def main() -> int:
+    try:
+        username, password = read_windows_credential(CREDENTIAL_TARGET)
+        ctx = create_context(SITE_URL, username, password)
+
+        target_relative_url = f"/sites/RD{FOLDER_PATH}/{TARGET_SUBFOLDER}"
+        folder = ctx.web.get_folder_by_server_relative_url(target_relative_url)
+        ctx.load(folder, ["Name", "ServerRelativeUrl"])
+        folder.execute_query()
+
+        print(f"站点: {SITE_URL}")
+        print(f"目标目录: {folder.serverRelativeUrl}")
+        print_folder_tree(folder)
+        return 0
+    except Exception as ex:
+        print(f"执行失败: {ex}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
