@@ -1,1 +1,5 @@
-".vs/" 
+.vs/
+pycache/
+*.pyproj 
+*.suo 
+*.db 
