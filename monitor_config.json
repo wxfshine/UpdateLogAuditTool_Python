@@ -1,0 +1,15 @@
+{
+  "poll_interval_minutes": 5,
+  "site_url": "https://cmgos.sharepoint.cn/sites/RD",
+  "folder_path": "/sites/RD/Shared Documents",
+  "root_sub_folder": "/sites/RD/Shared Documents/17.B包环境和操作历史状态",
+  "excluded_folder_names": [
+    "王晓峰"
+  ],
+  "wang_xiaofeng_folder": "/sites/RD/Shared Documents/17.B包环境和操作历史状态/王晓峰",
+  "upload_file_content": "王晓峰验证文件",
+  "base_local": "D:\\UpdateLogAuditTool_Log",
+  "log_dir": "D:\\UpdateLogAuditTool_Log\\log",
+  "state_file": "D:\\UpdateLogAuditTool_Log\\log\\monitor_state.json",
+  "enable_upload_validation_file": false
+}
