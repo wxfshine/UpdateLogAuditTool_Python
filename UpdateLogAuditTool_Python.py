@@ -8,6 +8,12 @@ from urllib.parse import quote
 
 import requests
 
+try:
+    from PIL import Image, ImageOps
+except ImportError:
+    Image = None
+    ImageOps = None
+
 # ======================
 # 你的 Cookie（完全不变）
 # ======================
@@ -343,41 +349,82 @@ def save_last_state(state):
         json.dump(state, file, ensure_ascii=False, indent=2)
 
 
-def get_easyocr_reader():
-    try:
-        import easyocr
-    except ImportError:
-        log_error("OCR 跳过：未安装 easyocr，无法识别 PNG 图片中的时间信息。")
+def find_tesseract_executable():
+    possible_paths = [
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+    ]
+
+    for executable_path in possible_paths:
+        if os.path.exists(executable_path):
+            return executable_path
+
+    return None
+
+
+def get_ocr_engine():
+    if Image is None or ImageOps is None:
+        log_error("OCR 跳过：未安装 Pillow，无法识别 PNG 图片中的时间信息。")
         return None
 
     try:
-        return easyocr.Reader(["ch_sim", "en"], gpu=False)
+        import pytesseract
+    except ImportError:
+        log_error("OCR 跳过：未安装 pytesseract，无法识别 PNG 图片中的时间信息。")
+        return None
+
+    try:
+        tesseract_cmd = os.environ.get("TESSERACT_CMD") or find_tesseract_executable()
+        if tesseract_cmd:
+            pytesseract.pytesseract.tesseract_cmd = tesseract_cmd
+        return pytesseract
     except Exception as ex:
         log_error(f"OCR 初始化失败：{ex}")
         return None
 
 
-def extract_time_ranges_from_png(image_path: str, reader):
+def preprocess_image_for_ocr(image_path: str):
+    image = Image.open(image_path)
+    image = image.convert("L")
+    image = ImageOps.autocontrast(image)
+    image = image.point(lambda pixel: 255 if pixel > 180 else 0)
+    return image
+
+
+def extract_time_matches(ocr_text: str):
+    compact_text = re.sub(r"\s+", "", ocr_text)
+    pattern = re.compile(r"(\d{4})[/-](\d{2})[/-](\d{2})(\d{2}):(\d{2}):(\d{2})")
+    matches = []
+
+    for match in pattern.finditer(compact_text):
+        matches.append(
+            f"{match.group(1)}/{match.group(2)}/{match.group(3)} {match.group(4)}:{match.group(5)}:{match.group(6)}"
+        )
+
+    return matches
+
+
+def extract_time_ranges_from_png(image_path: str, ocr_engine):
     try:
-        results = reader.readtext(image_path, detail=0, paragraph=True)
+        image = preprocess_image_for_ocr(image_path)
+        full_text = ocr_engine.image_to_string(image, lang="chi_sim+eng", config="--psm 6")
     except Exception as ex:
         log_error(f"OCR 识别失败：{image_path}，原因：{ex}")
         return None
-
-    full_text = "\n".join(results)
-    normalized_text = full_text.replace(" ", "")
-
-    if "开始时间" not in normalized_text or "结束时间" not in normalized_text:
-        return None
-
-    time_matches = re.findall(r"\d{4}/\d{2}/\d{2}\s+\d{2}:\d{2}:\d{2}", full_text)
+    time_matches = extract_time_matches(full_text)
     if len(time_matches) < 2:
-        return None
+        return {
+            "start_time": None,
+            "end_time": None,
+            "ocr_text": full_text,
+            "time_matches": time_matches,
+        }
 
     return {
         "start_time": time_matches[0],
         "end_time": time_matches[1],
         "ocr_text": full_text,
+        "time_matches": time_matches,
     }
 
 
@@ -387,8 +434,8 @@ def analyze_zhou_liming_png(download_root: str, analysis_lines):
         log_info("OCR 分析跳过：未找到 周利明 目录。")
         return
 
-    reader = get_easyocr_reader()
-    if reader is None:
+    ocr_engine = get_ocr_engine()
+    if ocr_engine is None:
         return
 
     analysis_lines.append("")
@@ -403,10 +450,17 @@ def analyze_zhou_liming_png(download_root: str, analysis_lines):
 
         image_path = os.path.join(zhou_lim_ing_folder, file_name)
         log_info(f"开始 OCR 识别：{image_path}")
-        ocr_result = extract_time_ranges_from_png(image_path, reader)
+        ocr_result = extract_time_ranges_from_png(image_path, ocr_engine)
+        log_info(f"OCR 原文：\n{ocr_result['ocr_text'] if ocr_result else '(无识别结果)'}")
 
         if ocr_result is None:
-            log_info(f"OCR 未提取到有效开始/结束时间：{file_name}")
+            log_info(f"OCR 识别失败或无结果：{file_name}")
+            continue
+
+        if len(ocr_result["time_matches"]) < 2:
+            log_info(
+                f"OCR 未提取到 2 个时间：{file_name}，当前仅识别到 {len(ocr_result['time_matches'])} 个时间"
+            )
             continue
 
         matched_count += 1
