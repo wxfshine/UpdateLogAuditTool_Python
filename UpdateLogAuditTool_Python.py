@@ -1,8 +1,15 @@
 ﻿import json
 import logging
+import hashlib
+import shutil
 import os
 import re
+import socket
 import time
+import tempfile
+import ctypes
+from ctypes import wintypes
+from ftplib import FTP, error_perm
 from datetime import datetime
 from urllib.parse import quote
 
@@ -17,9 +24,10 @@ except ImportError:
 # ======================
 # 你的 Cookie（完全不变）
 # ======================
-FedAuth = "77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48U1A+VjE1LDBoLmZ8bWVtYmVyc2hpcHwyMDAzYmZmZDgxNDgwZjVkQGxpdmUuY29tLDAjLmZ8bWVtYmVyc2hpcHx3YW5neGZAY21nb3MuY29tLDEzNDIyNTk0NDQzMDAwMDAwMCwxMzQyMDUyNDU4NDAwMDAwMDAsMTM0MjMwMjY0NDc3MTA4NjEyLDEyNC4xMjYuMjI0LjgzLDMsNzBkNTQ3NTAtYzYwZC00NGUxLThiM2MtZjQ2ZWE3ODc0MzU3LCwwMDRkNjQ5YS1hZDZkLTAxODctZDkyNi03NDhiZjAyZjkzZmYsZmMyNjExYTItZjA5NC0wMDAwLTJmNmQtZWIzNWZhMzM2OGJjLGZjMjYxMWEyLWYwOTQtMDAwMC0yZjZkLWViMzVmYTMzNjhiYywsMCwxMzQyMjU5ODA0NzY3OTYxOTksMTM0MjI4NTM2NDc2Nzk2MTk5LCwsZXlKNGJYTmZZMk1pT2lKYlhDSkRVREZjSWwwaUxDSndjbVZtWlhKeVpXUmZkWE5sY201aGJXVWlPaUozWVc1bmVHWkFZMjFuYjNNdVkyOXRJaXdpZFhScElqb2lUSGwxUjNnNVFsZzJSVFpsYUhaVldVRlhNVWRCUVNJc0ltRjFkR2hmZEdsdFpTSTZJakV6TkRJeU5UazBORFF6TURBd01EQXdNQ0o5LDI2NTA0Njc3NDM5OTk5OTk5OTksMTM0MjI1OTQ0NDcwMDAwMDAwLDYwY2JjOGY0LTRmNTYtNDhmMy05MTMzLWUzZjZkMzkyY2NlZCwsLCwsLDExNTI5MjE1MDQ2MDY4NDY5NzYsLDc3NixDMGh3eHg1c3Z6MWVQNjBfcE83RERVMThzdUEsLDAsLG15T3RJSVN5L0x0SGJwclBCWDkxRkMwTkNqOEliMjJTV1lnZFA3ODVTcUEyNVhIdUtwd3BhSkQ0SGVYeng2M1NYL2tPZUN1TEFoVkJYbVhQNSsvdjAvNDMwcnpLTk9VTDRobGsyaTE2aGkxMVZPT0dtbjZUeTBlblhpNVB5d3BFamlnQnpmOEhwOUxhU29DeEFZL1NnRGg3NDBhalRzNzNraXpNOXZBTmhxTU9XNTQ1b3QwYmpPcEdLMjdNM2ZIMTEzK0xKN2xSZ2ZHdG51Q2I2L000cCtpdTA3VGQreXhBRm51TEREOGwvQ3Z4OUpGU0NOenNEV1did1FONW4zbGtDUS9GMk95UzZHa3F6OWg2Z1ZVWW1DVnJLbXk5N1BCT0NKZVphYmpBdlJsSFFQTTBRZU9MYm5OcXpIVTFDN1VrRDVxRVluMXVVVEVJazZHb1ZDWkRVdz09PC9TUD4="
-rtFa = "zDEfW2/gcjouTbqqW0R1rqQMKIRbKt1OfR/R5prv1x8mNzBkNTQ3NTAtYzYwZC00NGUxLThiM2MtZjQ2ZWE3ODc0MzU3IzEzNDIyNTk0NDQ3NzQyMTE2MiNmYzI2MTFhMi0xMDkwLTAwMDAtMmY2ZC1lMjE4Zjk3MjdjNWQjd2FuZ3hmJTQwY21nb3MuY29tIzc3NiNZMXQyM1pscEpmS2Exc3lUb3k3NUVlUXVoQUEjWTF0MjNabHBKZkthMXN5VG95NzVFZVF1aEFBYBRlW5p0vSrHaBR1AktzYXC9U6J09uj7MGN5qQwlUfe25tIwAaMFizAC7q1mIRkZF1SfQlIyGXVMPjzD+St3Kg0a/I9S2pTs2eXCpYmzojYV23QLzC2+6j5IKfAIw7a+C8b4NWs9b9qWJ1sI2NCycYanObUSebANoMs6+rb47oAfa6idm+sTuHh3rHZel95nekzdjO2HJoLcAu09UoJhCKlOpRFd9IvPwEl8fILV80gjna5VOwNzJmdbnRKUEcY3KpjM3hjRKtC6nrN9YaJRZJNGx54oeVCkAABzvhkFz2F/3Nra0nTyetAocNKQBjyBr/k3uyut+wFIg/MgocTfDMwAAAA="
-
+FedAuth_old = "77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48U1A+VjE1LDBoLmZ8bWVtYmVyc2hpcHwyMDAzYmZmZDgxNDgwZjVkQGxpdmUuY29tLDAjLmZ8bWVtYmVyc2hpcHx3YW5neGZAY21nb3MuY29tLDEzNDIyNTk0NDQzMDAwMDAwMCwxMzQyMDUyNDU4NDAwMDAwMDAsMTM0MjMwMjY0NDc3MTA4NjEyLDEyNC4xMjYuMjI0LjgzLDMsNzBkNTQ3NTAtYzYwZC00NGUxLThiM2MtZjQ2ZWE3ODc0MzU3LCwwMDRkNjQ5YS1hZDZkLTAxODctZDkyNi03NDhiZjAyZjkzZmYsZmMyNjExYTItZjA5NC0wMDAwLTJmNmQtZWIzNWZhMzM2OGJjLGZjMjYxMWEyLWYwOTQtMDAwMC0yZjZkLWViMzVmYTMzNjhiYywsMCwxMzQyMjU5ODA0NzY3OTYxOTksMTM0MjI4NTM2NDc2Nzk2MTk5LCwsZXlKNGJYTmZZMk1pT2lKYlhDSkRVREZjSWwwaUxDSndjbVZtWlhKeVpXUmZkWE5sY201aGJXVWlPaUozWVc1bmVHWkFZMjFuYjNNdVkyOXRJaXdpZFhScElqb2lUSGwxUjNnNVFsZzJSVFpsYUhaVldVRlhNVWRCUVNJc0ltRjFkR2hmZEdsdFpTSTZJakV6TkRJeU5UazBORFF6TURBd01EQXdNQ0o5LDI2NTA0Njc3NDM5OTk5OTk5OTksMTM0MjI1OTQ0NDcwMDAwMDAwLDYwY2JjOGY0LTRmNTYtNDhmMy05MTMzLWUzZjZkMzkyY2NlZCwsLCwsLDExNTI5MjE1MDQ2MDY4NDY5NzYsLDc3NixDMGh3eHg1c3Z6MWVQNjBfcE83RERVMThzdUEsLDAsLG15T3RJSVN5L0x0SGJwclBCWDkxRkMwTkNqOEliMjJTV1lnZFA3ODVTcUEyNVhIdUtwd3BhSkQ0SGVYeng2M1NYL2tPZUN1TEFoVkJYbVhQNSsvdjAvNDMwcnpLTk9VTDRobGsyaTE2aGkxMVZPT0dtbjZUeTBlblhpNVB5d3BFamlnQnpmOEhwOUxhU29DeEFZL1NnRGg3NDBhalRzNzNraXpNOXZBTmhxTU9XNTQ1b3QwYmpPcEdLMjdNM2ZIMTEzK0xKN2xSZ2ZHdG51Q2I2L000cCtpdTA3VGQreXhBRm51TEREOGwvQ3Z4OUpGU0NOenNEV1did1FONW4zbGtDUS9GMk95UzZHa3F6OWg2Z1ZVWW1DVnJLbXk5N1BCT0NKZVphYmpBdlJsSFFQTTBRZU9MYm5OcXpIVTFDN1VrRDVxRVluMXVVVEVJazZHb1ZDWkRVdz09PC9TUD4="
+FedAuth = "77u/PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz48U1A+VjE1LDBoLmZ8bWVtYmVyc2hpcHwyMDAzYmZmZDgxNDgwZjVkQGxpdmUuY29tLDAjLmZ8bWVtYmVyc2hpcHx3YW5neGZAY21nb3MuY29tLDEzNDIyOTQ2OTUwMDAwMDAwMCwxMzQyMDUyNDU4NDAwMDAwMDAsMTM0MjMzNzg5NTQ2OTA0OTY0LDEyNC4xMjYuMjI0LjgzLDMsNzBkNTQ3NTAtYzYwZC00NGUxLThiM2MtZjQ2ZWE3ODc0MzU3LCwwMDRlMDBkYS01OGRjLTkxZTYtNjdlZC0zNDhiYzhlZTMzY2UsMjk3NzEyYTItMTBkYi0wMDAwLTJmNmQtZTU0ZWU4MGNiN2NkLDI5NzcxMmEyLTEwZGItMDAwMC0yZjZkLWU1NGVlODBjYjdjZCwsMCwxMzQyMjk1MDU1NDY1ODY2MDQsMTM0MjMyMDYxNTQ2NTg2NjA0LCwsZXlKNGJYTmZZMk1pT2lKYlhDSkRVREZjSWwwaUxDSndjbVZtWlhKeVpXUmZkWE5sY201aGJXVWlPaUozWVc1bmVHWkFZMjFuYjNNdVkyOXRJaXdpZFhScElqb2lUMVJ0UlZSQlh6TlFSWFUxVGtsYVlsOWZZMDVCUVNJc0ltRjFkR2hmZEdsdFpTSTZJakV6TkRJeU9UUTJPVFV3TURBd01EQXdNQ0o5LDI2NTA0Njc3NDM5OTk5OTk5OTksMTM0MjI5NDY5NTQwMDAwMDAwLDYwY2JjOGY0LTRmNTYtNDhmMy05MTMzLWUzZjZkMzkyY2NlZCwsLCwsLDExNTI5MjE1MDQ2MDY4NDY5NzYsLDc3NixDMGh3eHg1c3Z6MWVQNjBfcE83RERVMThzdUEsLDAsLGppdHFuenB6NkpOcTB5WlJkUlZRNWhvU3hidmh6dmRQZzVMV25LVDkrUVlZMnBaTXQ2YTQzWEMwTVJrbGJTRVV6ai82ZzIxT0NBNVJTYzYzMDBjbWs0TkZFOEpnU3FDZ3YxcWo1TnBRRzFjVWFpSnJNRzg5SmZZZnk5UkZWRHJVckk0YWlLeUIyYlp1ZlFPbDhQTVJFTWp4TmM1THZmVXNET214bWxiZkxYMk45Q0dhRHFLcHlIbkxzc0N6c1RERGpoT1psdG5LelpyUTNlWU5KbWhwQk5vSGxDLzJ3cWpFQVBndVM0YnBvME5aVS9EY3dVcVUwaTNFK0l1S0o1OEZSTmRjL1M1OGVCZCt6QTJhZGQzd1FsQUhHNk9sMjE4b3JQTXprR3BVZHlYMTdubjdFb0ZTVEpCVTJFV1pLdTRIeFU3SGZrSldualNPTDd0ODcrME03dz09PC9TUD4="
+rtFa_old = "zDEfW2/gcjouTbqqW0R1rqQMKIRbKt1OfR/R5prv1x8mNzBkNTQ3NTAtYzYwZC00NGUxLThiM2MtZjQ2ZWE3ODc0MzU3IzEzNDIyNTk0NDQ3NzQyMTE2MiNmYzI2MTFhMi0xMDkwLTAwMDAtMmY2ZC1lMjE4Zjk3MjdjNWQjd2FuZ3hmJTQwY21nb3MuY29tIzc3NiNZMXQyM1pscEpmS2Exc3lUb3k3NUVlUXVoQUEjWTF0MjNabHBKZkthMXN5VG95NzVFZVF1aEFBYBRlW5p0vSrHaBR1AktzYXC9U6J09uj7MGN5qQwlUfe25tIwAaMFizAC7q1mIRkZF1SfQlIyGXVMPjzD+St3Kg0a/I9S2pTs2eXCpYmzojYV23QLzC2+6j5IKfAIw7a+C8b4NWs9b9qWJ1sI2NCycYanObUSebANoMs6+rb47oAfa6idm+sTuHh3rHZel95nekzdjO2HJoLcAu09UoJhCKlOpRFd9IvPwEl8fILV80gjna5VOwNzJmdbnRKUEcY3KpjM3hjRKtC6nrN9YaJRZJNGx54oeVCkAABzvhkFz2F/3Nra0nTyetAocNKQBjyBr/k3uyut+wFIg/MgocTfDMwAAAA="
+rtFa = "XkqYzjKF9wrP5AyLJqr4Bi4jDtlzJarBV0Hrssh8fPcmNzBkNTQ3NTAtYzYwZC00NGUxLThiM2MtZjQ2ZWE3ODc0MzU3IzEzNDIyOTQ2OTU0NzE1NzI1OSMyOTc3MTJhMi05MGQ1LTAwMDAtMmY2ZC1lMWRlNDkyMzBiZDMjd2FuZ3hmJTQwY21nb3MuY29tIzc3NiNZMXQyM1pscEpmS2Exc3lUb3k3NUVlUXVoQUEjWTF0MjNabHBKZkthMXN5VG95NzVFZVF1aEFBErjqNnF3VBBmRzzHq2eb+0H93/V1zrCozZZnR7GlnK0RI2e1UAHI2z0l6y3Nc6b5knlpPUcO5yyd2L/qCfITRlC9I4cREEaT2irxgYJv+cBguSPwvqbakzqqESYmttQqulZiFO0NZuQRy6BNPIhx4egAMdSG9iBwB9Nqy3sciczQ88Xh/CWjPb/m5tsWe1qq3jNDvqf3PO8Vwsp9K9+wHp/sl8RDhP0UO0KQJpxmrpbgGazIJbwHerNMZCsKQI0Sl5W4eDFK/FNcl1JT8DplSvZrAQx8VU4gig0+sAEd7naT7U2L20ACedQf9uKE8F//0z6i8jo/xYR/vaGDZcIe18wAAAA="
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "monitor_config.json")
 DEFAULT_CONFIG = {
     "poll_interval_minutes": 5,
@@ -33,6 +41,16 @@ DEFAULT_CONFIG = {
     "log_dir": r"D:\UpdateLogAuditTool_Log\log",
     "state_file": r"D:\UpdateLogAuditTool_Log\log\monitor_state.json",
     "enable_upload_validation_file": False,
+    "Service_Data_Store_Type": "",
+    "Service_Data_Ftp_Auth": [],
+    "Service_Data_Path": "",
+    "Service_Data_Ftp_Port": 21,
+    "Service_Data_Ftp_Port_List": [],
+    "Service_Data_Ftp_Timeout_Seconds": 30,
+    "Service_Data_Ftp_Passive_Mode": True,
+    "Service_Data_Ftp_Retry_Count": 3,
+    "Service_Data_Ftp_Retry_Interval_Seconds": 5,
+    "Service_Data_Smb_Host": "",
 }
 
 site_url = DEFAULT_CONFIG["site_url"]
@@ -46,6 +64,16 @@ log_dir = DEFAULT_CONFIG["log_dir"]
 state_file = DEFAULT_CONFIG["state_file"]
 poll_interval_minutes = DEFAULT_CONFIG["poll_interval_minutes"]
 enable_upload_validation_file = DEFAULT_CONFIG["enable_upload_validation_file"]
+service_data_store_type = DEFAULT_CONFIG["Service_Data_Store_Type"]
+service_data_ftp_auth = DEFAULT_CONFIG["Service_Data_Ftp_Auth"]
+service_data_path = DEFAULT_CONFIG["Service_Data_Path"]
+service_data_ftp_port = DEFAULT_CONFIG["Service_Data_Ftp_Port"]
+service_data_ftp_port_list = DEFAULT_CONFIG["Service_Data_Ftp_Port_List"]
+service_data_ftp_timeout_seconds = DEFAULT_CONFIG["Service_Data_Ftp_Timeout_Seconds"]
+service_data_ftp_passive_mode = DEFAULT_CONFIG["Service_Data_Ftp_Passive_Mode"]
+service_data_ftp_retry_count = DEFAULT_CONFIG["Service_Data_Ftp_Retry_Count"]
+service_data_ftp_retry_interval_seconds = DEFAULT_CONFIG["Service_Data_Ftp_Retry_Interval_Seconds"]
+service_data_smb_host = DEFAULT_CONFIG["Service_Data_Smb_Host"]
 
 logger = logging.getLogger("UpdateLogAuditTool")
 logger.setLevel(logging.INFO)
@@ -102,6 +130,16 @@ def apply_config(config):
     global state_file
     global poll_interval_minutes
     global enable_upload_validation_file
+    global service_data_store_type
+    global service_data_ftp_auth
+    global service_data_path
+    global service_data_ftp_port
+    global service_data_ftp_port_list
+    global service_data_ftp_timeout_seconds
+    global service_data_ftp_passive_mode
+    global service_data_ftp_retry_count
+    global service_data_ftp_retry_interval_seconds
+    global service_data_smb_host
 
     site_url = config.get("site_url", DEFAULT_CONFIG["site_url"])
     folder_path = config.get("folder_path", DEFAULT_CONFIG["folder_path"])
@@ -127,6 +165,60 @@ def apply_config(config):
             DEFAULT_CONFIG["enable_upload_validation_file"],
         )
     )
+    service_data_store_type = str(
+        config.get("Service_Data_Store_Type", DEFAULT_CONFIG["Service_Data_Store_Type"])
+    ).strip()
+    service_data_ftp_auth = config.get(
+        "Service_Data_Ftp_Auth", DEFAULT_CONFIG["Service_Data_Ftp_Auth"]
+    )
+    service_data_path = str(
+        config.get("Service_Data_Path", DEFAULT_CONFIG["Service_Data_Path"])
+    ).strip()
+    service_data_ftp_port = int(
+        config.get("Service_Data_Ftp_Port", DEFAULT_CONFIG["Service_Data_Ftp_Port"])
+    )
+    raw_port_list = config.get(
+        "Service_Data_Ftp_Port_List", DEFAULT_CONFIG["Service_Data_Ftp_Port_List"]
+    )
+    if isinstance(raw_port_list, list):
+        service_data_ftp_port_list = [
+            int(port) for port in raw_port_list if str(port).strip()
+        ]
+    else:
+        service_data_ftp_port_list = []
+    service_data_ftp_timeout_seconds = int(
+        config.get(
+            "Service_Data_Ftp_Timeout_Seconds",
+            DEFAULT_CONFIG["Service_Data_Ftp_Timeout_Seconds"],
+        )
+    )
+    service_data_ftp_passive_mode = bool(
+        config.get(
+            "Service_Data_Ftp_Passive_Mode",
+            DEFAULT_CONFIG["Service_Data_Ftp_Passive_Mode"],
+        )
+    )
+    service_data_ftp_retry_count = max(
+        1,
+        int(
+            config.get(
+                "Service_Data_Ftp_Retry_Count",
+                DEFAULT_CONFIG["Service_Data_Ftp_Retry_Count"],
+            )
+        ),
+    )
+    service_data_ftp_retry_interval_seconds = max(
+        0,
+        int(
+            config.get(
+                "Service_Data_Ftp_Retry_Interval_Seconds",
+                DEFAULT_CONFIG["Service_Data_Ftp_Retry_Interval_Seconds"],
+            )
+        ),
+    )
+    service_data_smb_host = str(
+        config.get("Service_Data_Smb_Host", DEFAULT_CONFIG["Service_Data_Smb_Host"])
+    ).strip()
 
 
 def setup_logging():
@@ -148,13 +240,412 @@ def setup_logging():
 
 
 def log_info(message):
-    print(message)
     logger.info(message)
 
 
 def log_error(message):
-    print(message)
     logger.error(message)
+
+
+def get_service_data_ftp_host_and_path():
+    if service_data_store_type.lower() != "ftp":
+        return None, None
+
+    if not isinstance(service_data_ftp_auth, list) or len(service_data_ftp_auth) < 2:
+        raise ValueError("Service_Data_Ftp_Auth 配置无效，必须至少包含认证方式和主机地址。")
+
+    auth_type = str(service_data_ftp_auth[0]).strip()
+    ftp_host = str(service_data_ftp_auth[1]).strip()
+
+    if auth_type != "Windows 凭据":
+        raise ValueError(f"暂不支持的 Service_Data_Ftp_Auth 认证方式：{auth_type}")
+
+    if not ftp_host:
+        raise ValueError("Service_Data_Ftp_Auth 中未提供 FTP 主机地址。")
+
+    if not service_data_path:
+        raise ValueError("Service_Data_Path 未配置。")
+
+    normalized_path = service_data_path.replace("\\", "/").strip()
+    if not normalized_path.startswith("/"):
+        normalized_path = "/" + normalized_path
+
+    return ftp_host, normalized_path
+
+
+def get_service_data_smb_path():
+    if service_data_store_type.lower() not in ("smb", "windows_share", "windows share"):
+        return None
+
+    if not service_data_path:
+        raise ValueError("Service_Data_Path 未配置。")
+
+    normalized_path = service_data_path.strip()
+    if normalized_path.startswith("\\\\"):
+        return normalized_path
+
+    smb_host = service_data_smb_host.strip()
+    if not smb_host and isinstance(service_data_ftp_auth, list) and len(service_data_ftp_auth) >= 2:
+        smb_host = str(service_data_ftp_auth[1]).strip()
+
+    if not smb_host:
+        raise ValueError("SMB 模式下未提供主机地址，请配置 Service_Data_Smb_Host。")
+
+    normalized_path = normalized_path.lstrip("\\/")
+    normalized_path = normalized_path.replace("/", "\\")
+    return "\\\\" + smb_host + "\\" + normalized_path
+
+
+class FILETIME(ctypes.Structure):
+    _fields_ = [("dwLowDateTime", wintypes.DWORD), ("dwHighDateTime", wintypes.DWORD)]
+
+
+class CREDENTIAL_ATTRIBUTEW(ctypes.Structure):
+    _fields_ = [
+        ("Keyword", wintypes.LPWSTR),
+        ("Flags", wintypes.DWORD),
+        ("ValueSize", wintypes.DWORD),
+        ("Value", ctypes.POINTER(ctypes.c_ubyte)),
+    ]
+
+
+class CREDENTIALW(ctypes.Structure):
+    _fields_ = [
+        ("Flags", wintypes.DWORD),
+        ("Type", wintypes.DWORD),
+        ("TargetName", wintypes.LPWSTR),
+        ("Comment", wintypes.LPWSTR),
+        ("LastWritten", FILETIME),
+        ("CredentialBlobSize", wintypes.DWORD),
+        ("CredentialBlob", ctypes.POINTER(ctypes.c_ubyte)),
+        ("Persist", wintypes.DWORD),
+        ("AttributeCount", wintypes.DWORD),
+        ("Attributes", ctypes.POINTER(CREDENTIAL_ATTRIBUTEW)),
+        ("TargetAlias", wintypes.LPWSTR),
+        ("UserName", wintypes.LPWSTR),
+    ]
+
+
+def read_windows_credential(target_name: str):
+    advapi32 = ctypes.WinDLL("Advapi32.dll")
+    cred_ptr = ctypes.POINTER(CREDENTIALW)()
+    cred_type_generic = 1
+    cred_type_domain_password = 2
+
+    advapi32.CredReadW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD, ctypes.POINTER(ctypes.POINTER(CREDENTIALW))]
+    advapi32.CredReadW.restype = wintypes.BOOL
+    advapi32.CredFree.argtypes = [ctypes.c_void_p]
+    advapi32.CredFree.restype = None
+
+    for cred_type in (cred_type_generic, cred_type_domain_password):
+        cred_ptr = ctypes.POINTER(CREDENTIALW)()
+        if advapi32.CredReadW(target_name, cred_type, 0, ctypes.byref(cred_ptr)):
+            try:
+                credential = cred_ptr.contents
+                username = credential.UserName or ""
+                password = ""
+                if credential.CredentialBlob and credential.CredentialBlobSize:
+                    password = ctypes.string_at(
+                        credential.CredentialBlob,
+                        credential.CredentialBlobSize,
+                    ).decode("utf-16-le").rstrip("\x00")
+                return username, password
+            finally:
+                advapi32.CredFree(cred_ptr)
+
+    raise FileNotFoundError(f"未在 Windows 凭据中找到目标：{target_name}")
+
+
+def read_ftp_windows_credential(ftp_host: str):
+    candidate_target_names = [
+        ftp_host,
+        f"TERMSRV/{ftp_host}",
+        f"Microsoft_FTP_{ftp_host}",
+        f"ftp://{ftp_host}",
+        f"LegacyGeneric:target=ftp://{ftp_host}",
+        f"LegacyGeneric:target={ftp_host}",
+    ]
+
+    last_error = None
+    for target_name in candidate_target_names:
+        try:
+            return read_windows_credential(target_name)
+        except FileNotFoundError as ex:
+            last_error = ex
+
+    raise FileNotFoundError(
+        f"未在 Windows 凭据中找到 FTP 主机 {ftp_host} 对应的凭据，请确认该主机的 Windows 凭据已保存。"
+    ) from last_error
+
+
+def create_ftp_connection():
+    ftp_host, remote_path = get_service_data_ftp_host_and_path()
+    username, password = read_ftp_windows_credential(ftp_host)
+
+    candidate_ports = []
+    for port in [service_data_ftp_port, *service_data_ftp_port_list]:
+        if port not in candidate_ports:
+            candidate_ports.append(port)
+
+    last_error = None
+    for ftp_port in candidate_ports:
+        try:
+            probe_ftp_tcp_connectivity(ftp_host, ftp_port, service_data_ftp_timeout_seconds)
+
+            ftp = FTP()
+            ftp.connect(ftp_host, ftp_port, timeout=service_data_ftp_timeout_seconds)
+            ftp.login(username, password)
+            ftp.encoding = "utf-8"
+            ftp.set_pasv(service_data_ftp_passive_mode)
+            return ftp, ftp_host, remote_path, ftp_port
+        except Exception as ex:
+            last_error = ex
+            log_error(f"FTP 连接失败：host={ftp_host}, port={ftp_port}，原因：{ex}")
+
+    raise ConnectionError(
+        f"无法连接 FTP 主机 {ftp_host}，已尝试端口：{candidate_ports}"
+    ) from last_error
+
+
+def probe_ftp_tcp_connectivity(host: str, port: int, timeout_seconds: int):
+    try:
+        with socket.create_connection((host, port), timeout=timeout_seconds):
+            return
+    except OSError as ex:
+        raise ConnectionError(
+            f"TCP 预连接失败：{host}:{port}，timeout={timeout_seconds}s，原因：{ex}"
+        ) from ex
+
+
+def ensure_local_directory(path: str):
+    os.makedirs(path, exist_ok=True)
+
+
+def is_ftp_directory(ftp: FTP, remote_path: str):
+    current_dir = ftp.pwd()
+    try:
+        ftp.cwd(remote_path)
+        ftp.cwd(current_dir)
+        return True
+    except error_perm:
+        return False
+
+
+def list_ftp_entries(ftp: FTP, remote_path: str):
+    entries = []
+
+    def parse_line(line: str):
+        parts = line.split(maxsplit=8)
+        if len(parts) < 9:
+            return
+        name = parts[8]
+        if name in (".", ".."): 
+            return
+        entry_type = "dir" if parts[0].startswith("d") else "file"
+        entries.append({"name": name, "type": entry_type})
+
+    try:
+        ftp.retrlines(f"LIST {remote_path}", parse_line)
+        return entries
+    except error_perm as ex:
+        raise FileNotFoundError(f"无法列出 FTP 路径：{remote_path}，原因：{ex}") from ex
+
+
+def download_ftp_tree_to_local(ftp: FTP, remote_root: str, local_root: str):
+    ensure_local_directory(local_root)
+
+    for entry in list_ftp_entries(ftp, remote_root):
+        remote_item_path = f"{remote_root.rstrip('/')}/{entry['name']}"
+        local_item_path = os.path.join(local_root, entry["name"])
+
+        if entry["type"] == "dir" and is_ftp_directory(ftp, remote_item_path):
+            download_ftp_tree_to_local(ftp, remote_item_path, local_item_path)
+            continue
+
+        ensure_local_directory(os.path.dirname(local_item_path))
+        with open(local_item_path, "wb") as local_file:
+            ftp.retrbinary(f"RETR {remote_item_path}", local_file.write)
+
+
+def get_service_data_remote_display_path(ftp_host: str, remote_path: str):
+    return f"ftp://{ftp_host}{remote_path}"
+
+
+def build_service_data_display_path():
+    store_type = service_data_store_type.lower()
+    if store_type == "ftp":
+        ftp_host, remote_path = get_service_data_ftp_host_and_path()
+        return get_service_data_remote_display_path(ftp_host, remote_path)
+    if store_type in ("smb", "windows_share", "windows share"):
+        return get_service_data_smb_path()
+    return service_data_path
+
+
+def get_service_data_base_local():
+    return os.path.join(base_local, "Service_data")
+
+
+def compute_file_hash(file_path: str):
+    sha256 = hashlib.sha256()
+    with open(file_path, "rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+
+def build_directory_snapshot(root_path: str):
+    snapshot = {"folders": [], "files": []}
+
+    for current_root, dirs, files in os.walk(root_path):
+        relative_root = os.path.relpath(current_root, root_path)
+        if relative_root != ".":
+            snapshot["folders"].append(relative_root.replace("/", "\\"))
+
+        for dir_name in sorted(dirs):
+            dir_path = os.path.join(current_root, dir_name)
+            relative_dir_path = os.path.relpath(dir_path, root_path)
+            snapshot["folders"].append(relative_dir_path.replace("/", "\\"))
+
+        for file_name in sorted(files):
+            full_path = os.path.join(current_root, file_name)
+            relative_path = os.path.relpath(full_path, root_path)
+            snapshot["files"].append({
+                "path": relative_path.replace("/", "\\"),
+                "size": os.path.getsize(full_path),
+                "hash": compute_file_hash(full_path),
+            })
+
+    snapshot["folders"] = sorted(set(snapshot["folders"]))
+    snapshot["files"] = sorted(snapshot["files"], key=lambda item: item["path"])
+    return snapshot
+
+
+def get_latest_service_data_snapshot_root(service_data_base_local: str):
+    if not os.path.isdir(service_data_base_local):
+        return None
+
+    candidate_dirs = []
+    for entry in os.listdir(service_data_base_local):
+        entry_path = os.path.join(service_data_base_local, entry)
+        if os.path.isdir(entry_path) and not entry.startswith("service_data_"):
+            candidate_dirs.append(entry_path)
+
+    if not candidate_dirs:
+        return None
+
+    candidate_dirs.sort(key=os.path.getmtime, reverse=True)
+    return candidate_dirs[0]
+
+
+def copy_local_tree_to_temp(source_root: str, temp_root: str):
+    ensure_local_directory(temp_root)
+
+    for current_root, dirs, files in os.walk(source_root):
+        relative_root = os.path.relpath(current_root, source_root)
+        target_root = temp_root if relative_root == "." else os.path.join(temp_root, relative_root)
+        ensure_local_directory(target_root)
+
+        for dir_name in dirs:
+            ensure_local_directory(os.path.join(target_root, dir_name))
+
+        for file_name in files:
+            source_file_path = os.path.join(current_root, file_name)
+            target_file_path = os.path.join(target_root, file_name)
+            shutil.copy2(source_file_path, target_file_path)
+
+
+def finalize_service_data_snapshot(temp_root: str, remote_display_path: str):
+    current_snapshot = build_directory_snapshot(temp_root)
+    service_data_base_local = get_service_data_base_local()
+    latest_local_snapshot_root = get_latest_service_data_snapshot_root(service_data_base_local)
+
+    if latest_local_snapshot_root and current_snapshot == build_directory_snapshot(latest_local_snapshot_root):
+        shutil.rmtree(temp_root, ignore_errors=True)
+        log_info(f"目前 {remote_display_path} 地址中数据不变，不再本地存储。")
+        return
+
+    time_folder = datetime.now().strftime("%Y%m%d%H%M%S")
+    target_local_root = os.path.join(service_data_base_local, time_folder)
+    os.rename(temp_root, target_local_root)
+
+    file_count = sum(len(files) for _, _, files in os.walk(target_local_root))
+    log_info(f"✅ Service_Data 数据已保存到本地：{target_local_root}")
+    log_info(f"📄 本次共保存文件：{file_count} 个")
+
+
+def download_service_data_from_smb():
+    remote_path = get_service_data_smb_path()
+
+    if not os.path.exists(remote_path):
+        raise FileNotFoundError(f"无法访问 Windows 共享路径：{remote_path}")
+
+    log_info("\n" + "=" * 70)
+    log_info("📥 开始获取服务部门 Service_Data 数据")
+    log_info("=" * 70)
+    log_info(f"远程路径：{remote_path}")
+
+    service_data_base_local = get_service_data_base_local()
+    os.makedirs(service_data_base_local, exist_ok=True)
+
+    temp_root = tempfile.mkdtemp(prefix="service_data_", dir=service_data_base_local)
+    try:
+        copy_local_tree_to_temp(remote_path, temp_root)
+        finalize_service_data_snapshot(temp_root, remote_path)
+        temp_root = None
+    finally:
+        if temp_root and os.path.isdir(temp_root):
+            shutil.rmtree(temp_root, ignore_errors=True)
+
+
+def download_service_data_from_ftp():
+    if service_data_store_type.lower() != "ftp":
+        return
+
+    ftp = None
+    temp_root = None
+    last_error = None
+
+    for attempt in range(1, service_data_ftp_retry_count + 1):
+        ftp = None
+        temp_root = None
+        try:
+            ftp, ftp_host, remote_path, connected_port = create_ftp_connection()
+            remote_display_path = get_service_data_remote_display_path(ftp_host, remote_path)
+
+            log_info("\n" + "=" * 70)
+            log_info("📥 开始获取服务部门 Service_Data 数据")
+            log_info("=" * 70)
+            log_info(f"远程路径：{remote_display_path}")
+            log_info(
+                f"FTP 连接参数：host={ftp_host}, port={connected_port}, timeout={service_data_ftp_timeout_seconds}s, passive={service_data_ftp_passive_mode}, attempt={attempt}/{service_data_ftp_retry_count}"
+            )
+
+            service_data_base_local = get_service_data_base_local()
+            os.makedirs(service_data_base_local, exist_ok=True)
+
+            temp_root = tempfile.mkdtemp(prefix="service_data_", dir=service_data_base_local)
+            download_ftp_tree_to_local(ftp, remote_path, temp_root)
+
+            finalize_service_data_snapshot(temp_root, remote_display_path)
+            temp_root = None
+            return
+        except Exception as ex:
+            last_error = ex
+            if attempt < service_data_ftp_retry_count:
+                log_error(
+                    f"获取 Service_Data 数据失败，第 {attempt} 次重试前等待 {service_data_ftp_retry_interval_seconds} 秒：{ex}"
+                )
+                time.sleep(service_data_ftp_retry_interval_seconds)
+            else:
+                raise
+        finally:
+            if ftp is not None:
+                try:
+                    ftp.quit()
+                except Exception:
+                    ftp.close()
+            if temp_root and os.path.isdir(temp_root):
+                shutil.rmtree(temp_root, ignore_errors=True)
 
 
 def get_request_digest():
@@ -519,6 +1010,14 @@ def perform_check_cycle(last_state):
     log_info(f"🕒 开始检测：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     log_info("=" * 70)
 
+    try:
+        if service_data_store_type.lower() == "ftp":
+            download_service_data_from_ftp()
+        elif service_data_store_type.lower() in ("smb", "windows_share", "windows share"):
+            download_service_data_from_smb()
+    except Exception as ex:
+        log_error(f"获取 Service_Data 数据失败：{ex}")
+
     current_state = collect_remote_state(root_sub_folder)
 
     if last_state is None:
@@ -575,6 +1074,14 @@ def main():
     log_info(f"轮询间隔：{poll_interval_minutes} 分钟")
     log_info(f"日志目录：{log_dir}")
     log_info(f"监控目录：{root_sub_folder}")
+    if service_data_store_type:
+        log_info(f"Service_Data 存储类型：{service_data_store_type}")
+        log_info(f"Service_Data 远程路径：{build_service_data_display_path()}")
+        log_info(f"Service_Data 本地目录：{get_service_data_base_local()}")
+        if service_data_store_type.lower() == "ftp":
+            log_info(
+                f"FTP 配置：port={service_data_ftp_port}, port_list={service_data_ftp_port_list}, timeout={service_data_ftp_timeout_seconds}s, passive={service_data_ftp_passive_mode}, retry={service_data_ftp_retry_count}"
+            )
     log_info(
         "说明：为避免程序自己上传验证文件后再次触发变更，默认不自动上传验证文件；"
         "如需启用，请在 monitor_config.json 中把 enable_upload_validation_file 改为 true。"

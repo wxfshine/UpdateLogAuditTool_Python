@@ -2,14 +2,25 @@
   "poll_interval_minutes": 5,
   "site_url": "https://cmgos.sharepoint.cn/sites/RD",
   "folder_path": "/sites/RD/Shared Documents",
-  "root_sub_folder": "/sites/RD/Shared Documents/17.B°ü»·¾³ºÍ²Ù×÷ÀúÊ·×´Ì¬",
+  "root_sub_folder": "/sites/RD/Shared Documents/17.BåŒ…ç¯å¢ƒå’Œæ“ä½œå†å²çŠ¶æ€",
   "excluded_folder_names": [
-    "ÍõÏş·å"
+    "ç‹æ™“å³°"
   ],
-  "wang_xiaofeng_folder": "/sites/RD/Shared Documents/17.B°ü»·¾³ºÍ²Ù×÷ÀúÊ·×´Ì¬/ÍõÏş·å",
-  "upload_file_content": "ÍõÏş·åÑéÖ¤ÎÄ¼ş",
+  "wang_xiaofeng_folder": "/sites/RD/Shared Documents/17.BåŒ…ç¯å¢ƒå’Œæ“ä½œå†å²çŠ¶æ€/ç‹æ™“å³°",
+  "upload_file_content": "Just A Test File !!!",
   "base_local": "D:\\UpdateLogAuditTool_Log",
   "log_dir": "D:\\UpdateLogAuditTool_Log\\log",
   "state_file": "D:\\UpdateLogAuditTool_Log\\log\\monitor_state.json",
-  "enable_upload_validation_file": false
+  "enable_upload_validation_file": true,
+  "Service_Data_Store_Type": "windows_share",
+  "Service_Data_Ftp_Auth": [ "Windows å‡­æ®", "10.0.19.101" ],
+  "Service_Data_Ftp_Port": 21,
+  "Service_Data_Ftp_Port_List": [],
+  "Service_Data_Ftp_Timeout_Seconds": 30,
+  "Service_Data_Ftp_Passive_Mode": true,
+  "Service_Data_Ftp_Retry_Count": 3,
+  "Service_Data_Ftp_Retry_Interval_Seconds": 5,
+  "Service_Data_Smb_Host": "10.0.19.101",
+  "Service_Data_Path": "\\å…±äº«åº”ç”¨\\WangXiaofeng\\åœ¨çº¿å›¢é˜ŸUCæ›´æ–°åŒ…å‘å¸ƒæ—¥å¿—æ–‡ä»¶",
+  "Monitor_Start_Date": [ "2026-05-11", "2026-06-08", "2026-07-13", "2026-08-10", "2026-09-09", "2026-10-14", "2026-11-09", "2026-12-07", "2027-01-11", "2027-02-08" ]
 }
