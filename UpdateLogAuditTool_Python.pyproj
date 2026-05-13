@@ -23,12 +23,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="UpdateLogAuditTool_Python.py" />
+    <Compile Include="web_demo_server.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.13" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="monitor_config.json" />
+    <Content Include="web\app.js" />
+    <Content Include="web\index.html" />
+    <Content Include="web\styles.css" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="web\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

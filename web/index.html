@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>&#26356;&#26032;&#26085;&#24535;&#23457;&#35745;&#27719;&#25253;&#24179;&#21488;</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>&#26356;&#26032;&#26085;&#24535;&#23457;&#35745;&#27719;&#25253;&#24179;&#21488;</h1>
+      <p class="subtitle">&#30740;&#21457;&#37096;&#38376;&#21344;&#20301; + &#26381;&#21153;&#37096;&#38376;&#26376;&#24230;&#34917;&#19969;&#27969;&#31243;&#28436;&#31034;</p>
+    </div>
+    <div class="badge">&#28436;&#31034;&#25968;&#25454;</div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab-button active" data-tab="dashboard">&#24635;&#35272;</button>
+    <button class="tab-button" data-tab="service">&#26381;&#21153;&#37096;&#38376;</button>
+    <button class="tab-button" data-tab="compare">&#26376;&#20221;&#23545;&#27604;</button>
+    <button class="tab-button" data-tab="alerts">&#24322;&#24120;&#25552;&#31034;</button>
+  </nav>
+
+  <main>
+    <section id="dashboard" class="tab-panel active">
+      <div id="summary-cards" class="card-grid"></div>
+      <div class="two-col">
+        <article class="panel">
+          <h2>&#30740;&#21457;&#37096;&#38376;</h2>
+          <div id="rd-placeholder"></div>
+        </article>
+        <article class="panel">
+          <h2>&#26381;&#21153;&#37096;&#38376;&#26368;&#26032;&#26376;&#20221;</h2>
+          <div id="latest-service-report"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="service" class="tab-panel">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>&#26381;&#21153;&#37096;&#38376;&#26376;&#25253;</h2>
+          <select id="month-select"></select>
+        </div>
+        <div id="service-month-report"></div>
+      </article>
+    </section>
+
+    <section id="compare" class="tab-panel">
+      <article class="panel">
+        <h2>&#26376;&#20221;&#23545;&#27604;</h2>
+        <div id="compare-table"></div>
+      </article>
+    </section>
+
+    <section id="alerts" class="tab-panel">
+      <article class="panel">
+        <h2>&#24322;&#24120;&#19982;&#25552;&#31034;</h2>
+        <div id="alerts-list"></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
