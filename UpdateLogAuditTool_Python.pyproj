@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>UpdateLogAuditTool_Python</Name>
     <RootNamespace>UpdateLogAuditTool_Python</RootNamespace>
-    <InterpreterId>Global|PythonCore|3.13</InterpreterId>
+    <InterpreterId>Global|VisualStudio|python-3.13.1-embed-amd64</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -27,6 +27,7 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.13" />
+    <InterpreterReference Include="Global|VisualStudio|python-3.13.1-embed-amd64" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="monitor_config.json" />

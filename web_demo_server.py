@@ -1,4 +1,4 @@
-import json
+﻿import json
 import re
 from datetime import datetime
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -19,6 +19,18 @@ def load_config():
 
 def get_service_data_base_local(config):
     return Path(config["base_local"]) / "Service_data"
+
+
+def get_log_dir(config):
+    return Path(config.get("log_dir") or (Path(config["base_local"]) / "log"))
+
+
+def get_dev_data_base_local(config):
+    return Path(config["base_local"]) / "Dev_data"
+
+
+def get_dev_analysis_latest_json_path(config):
+    return get_log_dir(config) / "dev_analysis_latest.json"
 
 
 def get_service_data_smb_path(config):
@@ -78,9 +90,11 @@ def classify_service_file(file_name: str):
 
 
 def extract_month_from_path(path: Path):
+    explicit_months = [part for part in path.parts if re.match(r"^\d{4}-\d{2}$", part)]
+    if explicit_months:
+        return explicit_months[-1]
+
     for part in path.parts:
-        if re.match(r"^\d{4}-\d{2}$", part):
-            return part
         timestamp_match = re.match(r"^(20\d{2})(\d{2})\d{2,}$", part)
         if timestamp_match:
             return f"{timestamp_match.group(1)}-{timestamp_match.group(2)}"
@@ -124,6 +138,119 @@ def read_text_preview(file_path: Path, max_chars: int = 2000):
         except OSError:
             break
     return ""
+
+
+def parse_dev_snapshot_name(snapshot_name: str):
+    if re.match(r"^20\d{12}$", snapshot_name):
+        return datetime.strptime(snapshot_name, "%Y%m%d%H%M%S")
+    return None
+
+
+def parse_dev_period_name(folder_name: str):
+    match = re.match(r"^(20\d{2})_(\d{1,2})B$", folder_name, re.IGNORECASE)
+    if not match:
+        return None
+    year = int(match.group(1))
+    month = int(match.group(2))
+    return {
+        "folder_name": folder_name,
+        "year": year,
+        "month": month,
+        "label": f"{year}-{month:02d}",
+    }
+
+
+def fallback_build_dev_analysis(config):
+    dev_data_base_local = get_dev_data_base_local(config)
+    if not dev_data_base_local.exists():
+        return None
+
+    snapshot_dirs = [entry for entry in dev_data_base_local.iterdir() if entry.is_dir()]
+    if not snapshot_dirs:
+        return None
+
+    snapshot_dirs.sort(key=lambda item: item.stat().st_mtime, reverse=True)
+    latest_snapshot = snapshot_dirs[0]
+    snapshot_dt = parse_dev_snapshot_name(latest_snapshot.name)
+    people = []
+    total_period_count = 0
+    total_file_count = 0
+
+    for person_name in ["刘晴", "茹小龙", "周利明"]:
+        person_root = latest_snapshot / person_name
+        periods = []
+        if person_root.exists():
+            for folder in sorted(person_root.iterdir(), reverse=True):
+                if not folder.is_dir():
+                    continue
+                period_info = parse_dev_period_name(folder.name)
+                if not period_info:
+                    continue
+                files = []
+                for file_path in sorted(folder.rglob("*")):
+                    if file_path.is_file():
+                        stat = file_path.stat()
+                        files.append(
+                            {
+                                "file_name": file_path.name,
+                                "relative_path": str(file_path.relative_to(latest_snapshot)).replace("\\", "/"),
+                                "size": stat.st_size,
+                                "modified_time": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                            }
+                        )
+                periods.append(
+                    {
+                        "person_name": person_name,
+                        **period_info,
+                        "relative_path": str(folder.relative_to(latest_snapshot)).replace("\\", "/"),
+                        "file_count": len(files),
+                        "files": files,
+                        "analysis": {
+                            "status": "completed" if files else "not_found",
+                            "title": f"{person_name} 分析",
+                            "details": [f"目录：{folder.name}", f"年月标记：{period_info['label']}", f"文件数：{len(files)}"],
+                            "ocr_results": [],
+                        },
+                    }
+                )
+
+        total_period_count += len(periods)
+        total_file_count += sum(item["file_count"] for item in periods)
+        people.append(
+            {
+                "person_name": person_name,
+                "status": "completed" if periods else "not_found",
+                "period_count": len(periods),
+                "periods": periods,
+            }
+        )
+
+    return {
+        "snapshot_name": latest_snapshot.name,
+        "snapshot_root": str(latest_snapshot),
+        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "summary": {
+            "person_count": 3,
+            "period_count": total_period_count,
+            "file_count": total_file_count,
+        },
+        "people": people,
+        "snapshot_time": snapshot_dt.strftime("%Y-%m-%d %H:%M:%S") if snapshot_dt else None,
+    }
+
+
+def load_dev_analysis(config):
+    analysis_path = get_dev_analysis_latest_json_path(config)
+    if analysis_path.exists():
+        with open(analysis_path, "r", encoding="utf-8") as file:
+            data = json.load(file)
+        data.setdefault("snapshot_time", None)
+        if not data.get("snapshot_time"):
+            snapshot_dt = parse_dev_snapshot_name(str(data.get("snapshot_name", "")))
+            if snapshot_dt:
+                data["snapshot_time"] = snapshot_dt.strftime("%Y-%m-%d %H:%M:%S")
+        return data
+    return fallback_build_dev_analysis(config)
 
 
 def build_file_summary(file_path: Path, category: str):
@@ -207,9 +334,9 @@ def build_file_record(file_path: Path, service_data_base_local: Path):
     relative_path = file_path.relative_to(service_data_base_local)
     category = classify_service_file(file_path.name)
     modified_time = datetime.fromtimestamp(file_path.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
-    month = extract_month_from_path(relative_path)
+    month = infer_month_from_file_name(file_path.name)
     if month == UNKNOWN_MONTH:
-        month = infer_month_from_file_name(file_path.name)
+        month = extract_month_from_path(relative_path)
     file_record = {
         "file_id": str(relative_path).replace("\\", "/"),
         "month": month,
@@ -313,7 +440,92 @@ def build_alerts(monthly_reports):
     return alerts
 
 
-def build_dashboard(config, monthly_reports, alerts):
+def normalize_timeline_datetime(value):
+    if not value:
+        return None
+
+    normalized_value = str(value).strip()
+    for date_format in [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y-%m-%d",
+    ]:
+        try:
+            return datetime.strptime(normalized_value, date_format)
+        except ValueError:
+            continue
+    return None
+
+
+def build_dashboard_timeline(rd_analysis, monthly_reports):
+    timeline_items = []
+
+    if rd_analysis:
+        for person in rd_analysis.get("people", []):
+            for period in person.get("periods", []):
+                analysis = period.get("analysis", {})
+                for record in analysis.get("operation_records", []):
+                    event_time = record.get("start_time") or record.get("sort_time") or record.get("end_time")
+                    timeline_items.append(
+                        {
+                            "department_id": "rd",
+                            "department_name": "研发部门",
+                            "owner_name": person.get("person_name", ""),
+                            "month": period.get("label", ""),
+                            "event_time": event_time,
+                            "title": record.get("action_name") or analysis.get("title") or "研发操作",
+                            "status": record.get("result") or analysis.get("status") or "completed",
+                            "summary": record.get("operation_details") or record.get("details") or "",
+                            "source_name": record.get("source_relative_path") or record.get("source_file") or "",
+                        }
+                    )
+
+                for record in analysis.get("ocr_results", []):
+                    event_time = record.get("start_time") or record.get("end_time")
+                    timeline_items.append(
+                        {
+                            "department_id": "rd",
+                            "department_name": "研发部门",
+                            "owner_name": person.get("person_name", ""),
+                            "month": period.get("label", ""),
+                            "event_time": event_time,
+                            "title": analysis.get("title") or "PNG OCR 分析",
+                            "status": analysis.get("status") or "completed",
+                            "summary": record.get("relative_path") or "PNG 时间识别",
+                            "source_name": record.get("relative_path") or "",
+                        }
+                    )
+
+    for report in monthly_reports:
+        for file_record in report.get("files", []):
+            event_time = file_record.get("detected_time") or file_record.get("modified_time")
+            timeline_items.append(
+                {
+                    "department_id": "service",
+                    "department_name": "服务部门",
+                    "owner_name": report.get("month", ""),
+                    "month": report.get("month", ""),
+                    "event_time": event_time,
+                    "title": file_record.get("analysis", {}).get("title") or file_record.get("summary") or file_record.get("file_name") or "服务部门文件",
+                    "status": file_record.get("analysis", {}).get("status") or report.get("overall_status") or "completed",
+                    "summary": file_record.get("summary") or "",
+                    "source_name": file_record.get("relative_path") or file_record.get("file_name") or "",
+                }
+            )
+
+    timeline_items = [item for item in timeline_items if item.get("event_time")]
+    timeline_items.sort(
+        key=lambda item: (
+            normalize_timeline_datetime(item.get("event_time")) or datetime.min,
+            item.get("department_id", ""),
+            item.get("title", ""),
+        ),
+        reverse=True,
+    )
+    return timeline_items[:80]
+
+
+def build_dashboard(config, monthly_reports, alerts, rd_analysis):
     latest_report = monthly_reports[0] if monthly_reports else None
     resolved_source = resolve_service_data_source(config)
     latest_snapshot = get_latest_snapshot_directory(resolved_source)
@@ -323,24 +535,41 @@ def build_dashboard(config, monthly_reports, alerts):
     elif resolved_source.exists():
         last_sync_time = datetime.fromtimestamp(resolved_source.stat().st_mtime).strftime("%Y-%m-%d %H:%M:%S")
 
+    rd_file_count = rd_analysis["summary"]["file_count"] if rd_analysis else 0
+    rd_period_count = rd_analysis["summary"]["period_count"] if rd_analysis else 0
+    rd_snapshot_time = rd_analysis.get("snapshot_time") if rd_analysis else None
+    rd_people = rd_analysis.get("people", []) if rd_analysis else []
+    timeline_items = build_dashboard_timeline(rd_analysis, monthly_reports)
+
     return {
         "title": "\u66f4\u65b0\u65e5\u5fd7\u5ba1\u8ba1\u6c47\u62a5\u5e73\u53f0",
         "demo_mode": True,
         "last_sync_time": last_sync_time,
         "summary_cards": {
             "department_count": 2,
-            "month_count": len(monthly_reports),
-            "file_count": sum(report["file_count"] for report in monthly_reports),
+            "month_count": len(monthly_reports) + rd_period_count,
+            "file_count": sum(report["file_count"] for report in monthly_reports) + rd_file_count,
             "alert_count": len(alerts),
             "latest_month": latest_report["month"] if latest_report else None,
         },
+        "timeline_items": timeline_items,
         "departments": [
             {
                 "department_id": "rd",
                 "department_name": "\u7814\u53d1\u90e8\u95e8",
                 "source_type": "sharepoint",
-                "status": "placeholder",
-                "summary": "\u5df2\u63a5\u5165\uff0c\u5f85\u5c55\u793a",
+                "status": "active" if rd_analysis else "placeholder",
+                "summary": f"\u6700\u65b0\u5feb\u7167\uff1a{rd_snapshot_time or '--'}\uff0c\u6587\u4ef6\u6570\uff1a{rd_file_count}",
+                "snapshot_time": rd_snapshot_time,
+                "period_count": rd_period_count,
+                "people": [
+                    {
+                        "person_name": item["person_name"],
+                        "period_count": item["period_count"],
+                        "status": item["status"],
+                    }
+                    for item in rd_people
+                ],
             },
             {
                 "department_id": "service",
@@ -360,14 +589,17 @@ def build_app_data():
     files = build_service_files(service_data_base_local)
     monthly_reports = build_monthly_reports(files, config)
     alerts = build_alerts(monthly_reports)
-    dashboard = build_dashboard(config, monthly_reports, alerts)
+    rd_analysis = load_dev_analysis(config)
+    dashboard = build_dashboard(config, monthly_reports, alerts, rd_analysis)
     return {
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "config": {
             "service_data_base_local": str(service_data_base_local),
             "service_data_store_type": config.get("Service_Data_Store_Type"),
+            "dev_data_base_local": str(get_dev_data_base_local(config)),
         },
         "dashboard": dashboard,
+        "rd_analysis": rd_analysis,
         "monthly_reports": monthly_reports,
         "alerts": alerts,
     }
@@ -416,6 +648,26 @@ class DemoRequestHandler(SimpleHTTPRequestHandler):
 
         if path == "/api/departments":
             self.write_json(data["dashboard"]["departments"])
+            return
+
+        if path == "/api/departments/rd/latest":
+            self.write_json(data["rd_analysis"] or {})
+            return
+
+        if path == "/api/departments/rd/people":
+            rd_analysis = data["rd_analysis"] or {}
+            self.write_json({"people": rd_analysis.get("people", [])})
+            return
+
+        rd_people_prefix = "/api/departments/rd/people/"
+        if path.startswith(rd_people_prefix):
+            person_name = path[len(rd_people_prefix):].strip("/")
+            rd_analysis = data["rd_analysis"] or {}
+            person = next((item for item in rd_analysis.get("people", []) if item["person_name"] == person_name), None)
+            if person is None:
+                self.write_json({"error": "person not found"}, status=404)
+                return
+            self.write_json(person)
             return
 
         if path == "/api/departments/service/months":

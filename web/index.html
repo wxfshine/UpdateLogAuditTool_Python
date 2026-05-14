@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
@@ -10,13 +10,14 @@
   <header class="topbar">
     <div>
       <h1>&#26356;&#26032;&#26085;&#24535;&#23457;&#35745;&#27719;&#25253;&#24179;&#21488;</h1>
-      <p class="subtitle">&#30740;&#21457;&#37096;&#38376;&#21344;&#20301; + &#26381;&#21153;&#37096;&#38376;&#26376;&#24230;&#34917;&#19969;&#27969;&#31243;&#28436;&#31034;</p>
+      <p class="subtitle">&#30740;&#21457;&#37096;&#38376; Dev_data + &#26381;&#21153;&#37096;&#38376;&#26376;&#24230;&#34917;&#19969;&#27969;&#31243;&#23637;&#31034;</p>
     </div>
     <div class="badge">&#28436;&#31034;&#25968;&#25454;</div>
   </header>
 
   <nav class="tabs">
     <button class="tab-button active" data-tab="dashboard">&#24635;&#35272;</button>
+    <button class="tab-button" data-tab="rd">&#30740;&#21457;&#37096;&#38376;</button>
     <button class="tab-button" data-tab="service">&#26381;&#21153;&#37096;&#38376;</button>
     <button class="tab-button" data-tab="compare">&#26376;&#20221;&#23545;&#27604;</button>
     <button class="tab-button" data-tab="alerts">&#24322;&#24120;&#25552;&#31034;</button>
@@ -35,6 +36,30 @@
           <div id="latest-service-report"></div>
         </article>
       </div>
+      <article class="panel timeline-panel">
+        <div class="panel-header">
+          <h2>部门综合时间线</h2>
+          <div class="timeline-panel-controls">
+            <select id="dashboard-timeline-month-select"></select>
+            <div id="dashboard-timeline-meta"></div>
+          </div>
+        </div>
+        <div id="dashboard-timeline"></div>
+        <div class="nested-table pending-panel">
+          <h3>待处理事件</h3>
+          <div id="dashboard-timeline-pending"></div>
+        </div>
+      </article>
+    </section>
+
+    <section id="rd" class="tab-panel">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>&#30740;&#21457;&#37096;&#38376; Dev_data</h2>
+          <div id="rd-snapshot-meta"></div>
+        </div>
+        <div id="rd-report"></div>
+      </article>
     </section>
 
     <section id="service" class="tab-panel">
