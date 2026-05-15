@@ -12,7 +12,10 @@
 };
 
 async function fetchJson(url) {
-  const response = await fetch(url);
+  const requestUrl = url.includes("?") ? `${url}&_=${Date.now()}` : `${url}?_=${Date.now()}`;
+  const response = await fetch(requestUrl, {
+    cache: "no-store"
+  });
   if (!response.ok) {
     throw new Error(`Request failed: ${url}`);
   }
@@ -888,30 +891,47 @@ function renderCompare(items) {
   }
 
   container.innerHTML = `
-    <table class="table">
-      <thead>
-        <tr>
-          <th>\u6708\u4efd</th>
-          <th>\u53d6\u5305Hash</th>
-          <th>UC\u68c0\u67e5</th>
-          <th>\u4e0a\u4f20\u5ba1\u6279</th>
-          <th>\u8865\u4e01\u9a8c\u8bc1</th>
-          <th>\u603b\u4f53\u72b6\u6001</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${items.map(item => `
+    <div class="compare-table-hint">当前展示研发部门 5 项关键流程对比，以及服务部门原有 4 项月度流程对比。</div>
+    <div class="compare-table-container">
+      <table class="table compare-table">
+        <thead>
           <tr>
-            <td>${item.month}</td>
-            <td>${statusBadge(item.hash_status)}</td>
-            <td>${statusBadge(item.env_status)}</td>
-            <td>${statusBadge(item.approval_status)}</td>
-            <td>${statusBadge(item.validation_status)}</td>
-            <td>${statusBadge(item.overall_status)}</td>
+            <th rowspan="2">\u6708\u4efd</th>
+            <th colspan="5">\u7814\u53d1\u90e8\u95e8</th>
+            <th colspan="4">\u670d\u52a1\u90e8\u95e8</th>
+            <th rowspan="2">\u603b\u4f53\u72b6\u6001</th>
           </tr>
-        `).join("")}
-      </tbody>
-    </table>
+          <tr>
+            <th>\u4ece Catalog \u4e0a\u83b7\u5f97\u66f4\u65b0\u5305</th>
+            <th>\u4eceWSUS \u4e0a\u83b7\u5f97Metadata</th>
+            <th>\u5b8c\u6210 CMIT KB Metadata</th>
+            <th>CMIT KB \u4e0a\u4f20\u6587\u4ef6\u5230 FTPS</th>
+            <th>FTP\u4e0b\u8f7d\u66f4\u65b0\u6587\u4ef6\uff0c\u7136\u540e\u8fdb\u884c\u6d4b\u8bd5\u9a8c\u8bc1</th>
+            <th>\u53d6\u5305Hash</th>
+            <th>UC\u68c0\u67e5</th>
+            <th>\u4e0a\u4f20\u5ba1\u6279</th>
+            <th>\u8865\u4e01\u9a8c\u8bc1</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map(item => `
+            <tr>
+              <td>${escapeHtml(item.month || "--")}</td>
+              <td>${statusBadge(item.catalog_update_package_status || "not_found")}</td>
+              <td>${statusBadge(item.wsus_metadata_status || "not_found")}</td>
+              <td>${statusBadge(item.cmit_kb_metadata_status || "not_found")}</td>
+              <td>${statusBadge(item.ftps_upload_status || "not_found")}</td>
+              <td>${statusBadge(item.ftp_download_validation_status || "not_found")}</td>
+              <td>${statusBadge(item.hash_status || "not_found")}</td>
+              <td>${statusBadge(item.env_status || "not_found")}</td>
+              <td>${statusBadge(item.approval_status || "not_found")}</td>
+              <td>${statusBadge(item.validation_status || "not_found")}</td>
+              <td>${statusBadge(item.overall_status || "not_found")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
   `;
 }
 

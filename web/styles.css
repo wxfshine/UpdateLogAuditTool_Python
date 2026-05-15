@@ -485,6 +485,25 @@ select {
   font-size: 14px;
 }
 
+.compare-table-hint {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.compare-table-container {
+  overflow-x: auto;
+}
+
+.compare-table {
+  min-width: 1500px;
+}
+
+.compare-table th,
+.compare-table td {
+  white-space: nowrap;
+}
+
 pre {
   white-space: pre-wrap;
   word-break: break-word;

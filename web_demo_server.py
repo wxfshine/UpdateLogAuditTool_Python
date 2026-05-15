@@ -10,6 +10,33 @@ BASE_DIR = Path(__file__).resolve().parent
 CONFIG_FILE = BASE_DIR / "monitor_config.json"
 WEB_DIR = BASE_DIR / "web"
 UNKNOWN_MONTH = "\u672a\u5206\u6708"
+RD_COMPARE_STEP_DEFINITIONS = [
+    {
+        "step_code": "catalog_update_package",
+        "step_name": "从 Catalog 上获得更新包",
+        "action_names": {"GetUpdateByCatalog"},
+    },
+    {
+        "step_code": "wsus_metadata",
+        "step_name": "从WSUS 上获得Metadata",
+        "action_names": {"Export Metadata from WSUS"},
+    },
+    {
+        "step_code": "cmit_kb_metadata",
+        "step_name": "完成 CMIT KB Metadata",
+        "action_names": {"Extract, Scissor & Refine Metadata"},
+    },
+    {
+        "step_code": "ftps_upload",
+        "step_name": "CMIT KB 上传文件到 FTPS",
+        "action_names": {"上传文件到 FTPS", "传文件到 FTPS"},
+    },
+    {
+        "step_code": "ftp_download_validation",
+        "step_name": "FTP下载更新文件，然后进行测试验证",
+        "action_names": {"FTP下载更新文件"},
+    },
+]
 
 
 def load_config():
@@ -251,6 +278,36 @@ def load_dev_analysis(config):
                 data["snapshot_time"] = snapshot_dt.strftime("%Y-%m-%d %H:%M:%S")
         return data
     return fallback_build_dev_analysis(config)
+
+
+def build_rd_month_compare_map(rd_analysis):
+    month_compare_map = {}
+
+    if not rd_analysis:
+        return month_compare_map
+
+    for person in rd_analysis.get("people", []):
+        for period in person.get("periods", []):
+            month = period.get("label") or UNKNOWN_MONTH
+            analysis = period.get("analysis") or {}
+            operation_records = analysis.get("operation_records") or []
+            completed_actions = {
+                str(record.get("action_name") or "").strip()
+                for record in operation_records
+                if str(record.get("action_name") or "").strip()
+            }
+
+            month_entry = month_compare_map.setdefault(month, {})
+            for step_definition in RD_COMPARE_STEP_DEFINITIONS:
+                step_code = step_definition["step_code"]
+                already_completed = month_entry.get(step_code) == "completed"
+                if already_completed:
+                    continue
+
+                matched = any(action_name in completed_actions for action_name in step_definition["action_names"])
+                month_entry[step_code] = "completed" if matched else month_entry.get(step_code, "not_found")
+
+    return month_compare_map
 
 
 def build_file_summary(file_path: Path, category: str):
@@ -591,6 +648,7 @@ def build_app_data():
     alerts = build_alerts(monthly_reports)
     rd_analysis = load_dev_analysis(config)
     dashboard = build_dashboard(config, monthly_reports, alerts, rd_analysis)
+    rd_month_compare_map = build_rd_month_compare_map(rd_analysis)
     return {
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "config": {
@@ -600,6 +658,7 @@ def build_app_data():
         },
         "dashboard": dashboard,
         "rd_analysis": rd_analysis,
+        "rd_month_compare_map": rd_month_compare_map,
         "monthly_reports": monthly_reports,
         "alerts": alerts,
     }
@@ -610,7 +669,9 @@ class DemoRequestHandler(SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(WEB_DIR), **kwargs)
 
     def end_headers(self):
-        content_type = self.headers.get("Content-Type")
+        self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
         super().end_headers()
 
     def guess_type(self, path):
@@ -703,20 +764,32 @@ class DemoRequestHandler(SimpleHTTPRequestHandler):
             requested = query.get("months", [""])[0]
             selected = {item for item in requested.split(",") if item}
             reports = data["monthly_reports"]
+            rd_month_compare_map = data.get("rd_month_compare_map") or {}
+            service_report_map = {item["month"]: item for item in reports}
+            month_candidates = set(service_report_map.keys()) | set(rd_month_compare_map.keys())
             if selected:
-                reports = [item for item in reports if item["month"] in selected]
+                month_candidates &= selected
+
+            compare_months = sorted(month_candidates, reverse=True)
 
             items = []
-            for report in reports:
-                step_map = {step["step_code"]: step["status"] for step in report["steps"]}
+            for month in compare_months:
+                report = service_report_map.get(month)
+                step_map = {step["step_code"]: step["status"] for step in (report.get("steps", []) if report else [])}
+                rd_step_map = rd_month_compare_map.get(month, {})
                 items.append(
                     {
-                        "month": report["month"],
+                        "month": month,
                         "hash_status": step_map.get("ftp_hash", "not_found"),
                         "env_status": step_map.get("uc_env_check", "not_found"),
                         "approval_status": step_map.get("upload_approval", "not_found"),
                         "validation_status": step_map.get("patch_validation", "not_found"),
-                        "overall_status": report["overall_status"],
+                        "catalog_update_package_status": rd_step_map.get("catalog_update_package", "not_found"),
+                        "wsus_metadata_status": rd_step_map.get("wsus_metadata", "not_found"),
+                        "cmit_kb_metadata_status": rd_step_map.get("cmit_kb_metadata", "not_found"),
+                        "ftps_upload_status": rd_step_map.get("ftps_upload", "not_found"),
+                        "ftp_download_validation_status": rd_step_map.get("ftp_download_validation", "not_found"),
+                        "overall_status": report["overall_status"] if report else ("completed" if rd_step_map else "not_found"),
                     }
                 )
             self.write_json({"department_id": "service", "items": items})
