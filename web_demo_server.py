@@ -597,6 +597,11 @@ def build_dashboard(config, monthly_reports, alerts, rd_analysis):
     rd_snapshot_time = rd_analysis.get("snapshot_time") if rd_analysis else None
     rd_people = rd_analysis.get("people", []) if rd_analysis else []
     timeline_items = build_dashboard_timeline(rd_analysis, monthly_reports)
+    unique_months = {report["month"] for report in monthly_reports if report.get("month")}
+    for person in rd_people:
+        for period in person.get("periods", []):
+            if period.get("label"):
+                unique_months.add(period["label"])
 
     return {
         "title": "\u66f4\u65b0\u65e5\u5fd7\u5ba1\u8ba1\u6c47\u62a5\u5e73\u53f0",
@@ -604,7 +609,7 @@ def build_dashboard(config, monthly_reports, alerts, rd_analysis):
         "last_sync_time": last_sync_time,
         "summary_cards": {
             "department_count": 2,
-            "month_count": len(monthly_reports) + rd_period_count,
+            "month_count": len(unique_months),
             "file_count": sum(report["file_count"] for report in monthly_reports) + rd_file_count,
             "alert_count": len(alerts),
             "latest_month": latest_report["month"] if latest_report else None,
