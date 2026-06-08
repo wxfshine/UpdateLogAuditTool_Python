@@ -20,6 +20,7 @@
     <button class="tab-button" data-tab="rd">&#30740;&#21457;&#37096;&#38376;</button>
     <button class="tab-button" data-tab="service">&#26381;&#21153;&#37096;&#38376;</button>
     <button class="tab-button" data-tab="compare">&#26376;&#20221;&#23545;&#27604;</button>
+    <button class="tab-button" data-tab="swimlane">&#39033;&#30446;&#27891;&#36947;&#22270;</button>
     <button class="tab-button" data-tab="alerts">&#24322;&#24120;&#25552;&#31034;</button>
   </nav>
 
@@ -79,6 +80,25 @@
       </article>
     </section>
 
+    <section id="swimlane" class="tab-panel">
+      <article class="panel">
+        <div class="panel-header swimlane-panel-header">
+          <div>
+            <h2>&#39033;&#30446;&#27891;&#36947;&#22270;</h2>
+            <div id="swimlane-meta" class="swimlane-meta"></div>
+          </div>
+          <div class="swimlane-toolbar">
+            <span class="swimlane-toolbar-label">Language</span>
+            <div class="swimlane-locale-switch">
+              <button type="button" class="locale-button active" data-swimlane-locale="zh-CN">中文</button>
+              <button type="button" class="locale-button" data-swimlane-locale="en-US">English</button>
+            </div>
+          </div>
+        </div>
+        <div id="swimlane-diagram"></div>
+      </article>
+    </section>
+
     <section id="alerts" class="tab-panel">
       <article class="panel">
         <h2>&#24322;&#24120;&#19982;&#25552;&#31034;</h2>
@@ -87,6 +107,6 @@
     </section>
   </main>
 
-  <script src="/app.js"></script>
+  <script type="module" src="/app.js"></script>
 </body>
 </html>

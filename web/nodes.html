@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>泳道图节点详情</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .nodes-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    .nodes-table th,
+    .nodes-table td {
+      border: 1px solid #d1d5db;
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .nodes-table th {
+      background-color: #1d4ed8;
+      color: white;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+    .nodes-table tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .nodes-table tr:hover {
+      background-color: #e0f2fe;
+    }
+    .node-id {
+      font-family: monospace;
+      color: #1d4ed8;
+      font-weight: 500;
+    }
+    .node-title-zh {
+      font-weight: 500;
+      color: #1e293b;
+    }
+    .node-title-en {
+      color: #64748b;
+      font-style: italic;
+    }
+    .stage-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .stage-prep { background: #dbeafe; color: #1e40af; }
+    .stage-ms_test { background: #fce7f3; color: #9d174d; }
+    .stage-cmit_test { background: #d1fae5; color: #065f46; }
+    .stage-report { background: #fef3c7; color: #92400e; }
+    .stage-review { background: #e0e7ff; color: #3730a3; }
+    .stage-release { background: #fecaca; color: #991b1b; }
+    .stage-post_release { background: #f3e8ff; color: #6b21a8; }
+    .edge-list {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .edge-item {
+      margin-bottom: 4px;
+    }
+    .edge-label {
+      color: #64748b;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>泳道图节点详情</h1>
+      <p class="subtitle">项目泳道图节点完整信息表格</p>
+    </div>
+    <div class="badge">节点表格</div>
+  </header>
+
+  <main>
+    <section id="nodes" class="tab-panel active">
+      <article class="panel">
+        <div class="panel-header">
+          <h2>泳道图节点列表</h2>
+          <div>
+            <button onclick="exportTable()" style="padding: 8px 16px; cursor: pointer;">导出CSV</button>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="nodes-table" id="nodes-table">
+            <thead>
+              <tr>
+                <th>序号</th>
+                <th>节点编号</th>
+                <th>节点中文名称</th>
+                <th>节点英文名称</th>
+                <th>阶段</th>
+                <th>子阶段</th>
+                <th>角色</th>
+                <th>从节点发出的边</th>
+                <th>到节点的边</th>
+              </tr>
+            </thead>
+            <tbody id="nodes-tbody">
+              <tr><td colspan="8">正在加载数据...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script type="module">
+    import { getLocalizedText } from "./modules/swimlaneDiagram.js";
+
+    // 角色ID到显示名称的映射
+    const roleNames = {
+      "ms": { "zh-CN": "MS 微软", "en-US": "Microsoft" },
+      "cmit_test_owner": { "zh-CN": "CMIT 更新测试负责人", "en-US": "CMIT Update Test Owner" },
+      "cmit_tester": { "zh-CN": "CMIT 更新测试执行者", "en-US": "CMIT Update Test Executor" },
+      "cmit_dev": { "zh-CN": "CMIT 更新开发者", "en-US": "CMIT Update Developer" },
+      "cmit_reviewer": { "zh-CN": "CMIT 更新审核者", "en-US": "CMIT Update Reviewer" },
+      "cmit_pm": { "zh-CN": "CMIT 更新项目经理", "en-US": "CMIT Update Project Manager" },
+      "cmit_doc_reviewer": { "zh-CN": "CMIT 更新说明审核者", "en-US": "CMIT Update Documentation Reviewer" },
+      "cmit_publisher": { "zh-CN": "CMIT 更新发布者", "en-US": "CMIT Update Publisher" }
+    };
+
+    // 角色ID到编号前缀的映射
+    const rolePrefix = {
+      "ms": "MS",
+      "cmit_test_owner": "TestOwner",
+      "cmit_tester": "Tester",
+      "cmit_dev": "Dev",
+      "cmit_reviewer": "Reviewer",
+      "cmit_pm": "PM",
+      "cmit_doc_reviewer": "DocReviewer",
+      "cmit_publisher": "Publisher"
+    };
+
+    async function fetchJson(url) {
+      const response = await fetch(url + (url.includes("?") ? "&" : "?") + "_=" + Date.now());
+      if (!response.ok) throw new Error(`Request failed: ${url}`);
+      return response.json();
+    }
+
+    function escapeHtml(value) {
+      if (!value) return "";
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+    }
+
+    function getNodeNumber(node, roleNodes) {
+      const idx = roleNodes.findIndex(n => n.id === node.id);
+      return idx + 1;
+    }
+
+    function buildOutEdgesInfo(nodeId, edges, nodesMap) {
+      const outEdges = edges.filter(e => e.from === nodeId);
+      let html = "";
+      if (outEdges.length > 0) {
+        html += '<div><strong>发出:</strong>';
+        outEdges.forEach(e => {
+          const toNode = nodesMap.get(e.to);
+          const label = e.label ? getLocalizedText(e.label, "zh-CN") : "";
+          html += `<div class="edge-item">→ ${toNode ? getLocalizedText(toNode.title, "zh-CN") : e.to}${label ? ` (${escapeHtml(label)})` : ""}</div>`;
+        });
+        html += '</div>';
+      }
+      return html || "-";
+    }
+
+    function buildInEdgesInfo(nodeId, edges, nodesMap) {
+      const inEdges = edges.filter(e => e.to === nodeId);
+      let html = "";
+      if (inEdges.length > 0) {
+        html += '<div><strong>到达:</strong>';
+        inEdges.forEach(e => {
+          const fromNode = nodesMap.get(e.from);
+          const label = e.label ? getLocalizedText(e.label, "zh-CN") : "";
+          html += `<div class="edge-item">← ${fromNode ? getLocalizedText(fromNode.title, "zh-CN") : e.from}${label ? ` (${escapeHtml(label)})` : ""}</div>`;
+        });
+        html += '</div>';
+      }
+      return html || "-";
+    }
+
+    async function loadNodesTable() {
+      try {
+        const data = await fetchJson("/data/swimlane/workflow.cmit-update.example.json");
+
+        // 按角色分组节点
+        const nodesByRole = new Map();
+        data.nodes.forEach(node => {
+          if (!nodesByRole.has(node.roleId)) {
+            nodesByRole.set(node.roleId, []);
+          }
+          nodesByRole.get(node.roleId).push(node);
+        });
+
+        // 为每个角色的节点编号
+        const roleNodeCounters = {};
+        nodesByRole.forEach((nodes, roleId) => {
+          nodes.sort((a, b) => a.order - b.order);
+          roleNodeCounters[roleId] = 1;
+        });
+
+        // 构建节点映射
+        const nodesMap = new Map();
+        data.nodes.forEach(n => nodesMap.set(n.id, n));
+
+        // 按阶段和角色排序节点
+        const sortedNodes = [...data.nodes].sort((a, b) => {
+          const stageOrder = data.stages.findIndex(s => s.id === a.stageId) - data.stages.findIndex(s => s.id === b.stageId);
+          if (stageOrder !== 0) return stageOrder;
+          const roleOrder = data.roles.findIndex(r => r.id === a.roleId) - data.roles.findIndex(r => r.id === b.roleId);
+          if (roleOrder !== 0) return roleOrder;
+          return a.order - b.order;
+        });
+
+        const tbody = document.getElementById("nodes-tbody");
+        tbody.innerHTML = "";
+
+        let nodeIndex = 0;
+        sortedNodes.forEach(node => {
+          nodeIndex++;
+          const roleId = node.roleId;
+          const prefix = rolePrefix[roleId] || roleId;
+          const roleNodes = nodesByRole.get(roleId);
+          const nodeNum = getNodeNumber(node, roleNodes);
+          const nodeCode = `${prefix}${nodeNum}`;
+
+          const stage = data.stages.find(s => s.id === node.stageId);
+          const branch = data.branches.find(b => b.id === node.branchId);
+          const role = data.roles.find(r => r.id === node.roleId);
+
+          const stageName = stage ? getLocalizedText(stage.name, "zh-CN") : "-";
+          const branchName = branch ? getLocalizedText(branch.name, "zh-CN") : "-";
+          const roleName = role ? getLocalizedText(role.name, "zh-CN") : "-";
+
+          const stageId = stage ? stage.id : "";
+          const stageClass = stageId ? `stage-${stageId}` : "";
+
+          const titleZh = getLocalizedText(node.title, "zh-CN");
+          const titleEn = getLocalizedText(node.title, "en-US");
+
+          const outEdgesInfo = buildOutEdgesInfo(node.id, data.edges, nodesMap);
+          const inEdgesInfo = buildInEdgesInfo(node.id, data.edges, nodesMap);
+
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${nodeIndex}</td>
+            <td class="node-id">${escapeHtml(nodeCode)}</td>
+            <td class="node-title-zh">${escapeHtml(titleZh)}</td>
+            <td class="node-title-en">${escapeHtml(titleEn)}</td>
+            <td><span class="stage-badge ${stageClass}">${escapeHtml(stageName)}</span></td>
+            <td>${escapeHtml(branchName)}</td>
+            <td>${escapeHtml(roleName)}</td>
+            <td class="edge-list">${outEdgesInfo}</td>
+            <td class="edge-list">${inEdgesInfo}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (err) {
+        console.error("Failed to load swimlane data:", err);
+        document.getElementById("nodes-tbody").innerHTML =
+          `<tr><td colspan="9" style="color: red;">加载失败: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    window.exportTable = function() {
+      const table = document.getElementById("nodes-table");
+      const rows = table.querySelectorAll("tr");
+      let csv = "\uFEFF"; // BOM for UTF-8
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("th, td");
+        const rowData = [];
+        cells.forEach(cell => {
+          let text = cell.textContent.replace(/"/g, '""');
+          rowData.push(`"${text}"`);
+        });
+        csv += rowData.join(",") + "\n";
+      });
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "swimlane_nodes.csv";
+      link.click();
+    };
+
+    loadNodesTable();
+  </script>
+</body>
+</html>

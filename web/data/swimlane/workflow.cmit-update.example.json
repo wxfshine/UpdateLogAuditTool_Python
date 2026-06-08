@@ -1,0 +1,1165 @@
+{
+  "meta": {
+    "id": "cmit-kb-update-full-flow",
+    "version": "1.1.0",
+    "defaultLocale": "zh-CN",
+    "supportedLocales": ["zh-CN", "en-US"],
+    "title": {
+      "zh-CN": "CMIT KB 更新研发、测试、发布完整流程",
+      "en-US": "CMIT KB Update End-to-End R&D, Testing, and Release Flow"
+    },
+    "description": {
+      "zh-CN": "依据现有流程图整理，覆盖研发测试准备、MS 更新测试、CMIT 更新测试、报告、审核、发布及发布后处理。",
+      "en-US": "Organized from the existing flowchart, covering preparation, Microsoft update testing, CMIT update testing, reporting, review, release, and post-release handling."
+    }
+  },
+  "roles": [
+    {
+      "id": "ms",
+      "order": 1,
+      "name": { "zh-CN": "MS 微软", "en-US": "Microsoft" }
+    },
+    {
+      "id": "cmit_test_owner",
+      "order": 2,
+      "name": { "zh-CN": "CMIT 更新测试负责人", "en-US": "CMIT Update Test Owner" }
+    },
+    {
+      "id": "cmit_tester",
+      "order": 3,
+      "name": { "zh-CN": "CMIT 更新测试执行者", "en-US": "CMIT Update Test Executor" }
+    },
+    {
+      "id": "cmit_dev",
+      "order": 4,
+      "name": { "zh-CN": "CMIT 更新开发者", "en-US": "CMIT Update Developer" }
+    },
+    {
+      "id": "cmit_reviewer",
+      "order": 5,
+      "name": { "zh-CN": "CMIT 更新审核者", "en-US": "CMIT Update Reviewer" }
+    },
+    {
+      "id": "cmit_pm",
+      "order": 6,
+      "name": { "zh-CN": "CMIT 更新项目经理", "en-US": "CMIT Update Project Manager" }
+    },
+    {
+      "id": "cmit_doc_reviewer",
+      "order": 7,
+      "name": { "zh-CN": "CMIT 更新说明审核者", "en-US": "CMIT Update Documentation Reviewer" }
+    },
+    {
+      "id": "cmit_publisher",
+      "order": 8,
+      "name": { "zh-CN": "CMIT 更新发布者", "en-US": "CMIT Update Publisher" }
+    }
+  ],
+  "stages": [
+    {
+      "id": "prep",
+      "order": 1,
+      "name": { "zh-CN": "研发测试准备", "en-US": "Preparation for R&D Testing" }
+    },
+    {
+      "id": "ms_test",
+      "order": 2,
+      "name": { "zh-CN": "MS 更新测试", "en-US": "Microsoft Update Testing" }
+    },
+    {
+      "id": "cmit_test",
+      "order": 3,
+      "name": { "zh-CN": "CMIT 更新测试", "en-US": "CMIT Update Testing" }
+    },
+    {
+      "id": "report",
+      "order": 4,
+      "name": { "zh-CN": "报告阶段", "en-US": "Reporting" }
+    },
+    {
+      "id": "review",
+      "order": 5,
+      "name": { "zh-CN": "审核阶段", "en-US": "Review" }
+    },
+    {
+      "id": "release",
+      "order": 6,
+      "name": { "zh-CN": "发布阶段", "en-US": "Release" }
+    },
+    {
+      "id": "post_release",
+      "order": 7,
+      "name": { "zh-CN": "发布后", "en-US": "Post Release" }
+    }
+  ],
+  "branches": [
+    {
+      "id": "prep_plan",
+      "stageId": "prep",
+      "order": 1,
+      "name": { "zh-CN": "方案与用例", "en-US": "Plan and Test Cases" }
+    },
+    {
+      "id": "prep_env",
+      "stageId": "prep",
+      "order": 2,
+      "name": { "zh-CN": "测试环境", "en-US": "Test Environment" }
+    },
+    {
+      "id": "prep_dev",
+      "stageId": "prep",
+      "order": 3,
+      "name": { "zh-CN": "开发环境", "en-US": "Development Environment" }
+    },
+    {
+      "id": "prep_data",
+      "stageId": "prep",
+      "order": 4,
+      "name": { "zh-CN": "环境与数据准备", "en-US": "Environment and Data Preparation" }
+    },
+    {
+      "id": "ms_release_notice",
+      "stageId": "ms_test",
+      "order": 1,
+      "name": { "zh-CN": "微软发布与通知", "en-US": "Microsoft Release and Notice" }
+    },
+    {
+      "id": "ms_pretest",
+      "stageId": "ms_test",
+      "order": 2,
+      "name": { "zh-CN": "MS 预测试", "en-US": "Microsoft Pre-test" }
+    },
+    {
+      "id": "ms_build",
+      "stageId": "ms_test",
+      "order": 3,
+      "name": { "zh-CN": "CMIT 构建与提测", "en-US": "CMIT Build and Submission" }
+    },
+    {
+      "id": "ms_issue",
+      "stageId": "ms_test",
+      "order": 4,
+      "name": { "zh-CN": "问题分析", "en-US": "Issue Analysis" }
+    },
+    {
+      "id": "ms_doc",
+      "stageId": "ms_test",
+      "order": 5,
+      "name": { "zh-CN": "预发布说明", "en-US": "Pre-release Documentation" }
+    },
+    {
+      "id": "cmit_execute",
+      "stageId": "cmit_test",
+      "order": 1,
+      "name": { "zh-CN": "CMIT 验证", "en-US": "CMIT Validation" }
+    },
+    {
+      "id": "cmit_issue",
+      "stageId": "cmit_test",
+      "order": 2,
+      "name": { "zh-CN": "测试问题分析", "en-US": "Testing Issue Analysis" }
+    },
+    {
+      "id": "cmit_preload",
+      "stageId": "cmit_test",
+      "order": 3,
+      "name": { "zh-CN": "预下载", "en-US": "Pre-download" }
+    },
+    {
+      "id": "report_main",
+      "stageId": "report",
+      "order": 1,
+      "name": { "zh-CN": "测试报告", "en-US": "Test Reporting" }
+    },
+    {
+      "id": "report_check",
+      "stageId": "report",
+      "order": 2,
+      "name": { "zh-CN": "发布检查", "en-US": "Release Check" }
+    },
+    {
+      "id": "review_doc",
+      "stageId": "review",
+      "order": 1,
+      "name": { "zh-CN": "文档核对与提交", "en-US": "Document Verification and Submission" }
+    },
+    {
+      "id": "review_release",
+      "stageId": "review",
+      "order": 2,
+      "name": { "zh-CN": "发布审核", "en-US": "Release Review" }
+    },
+    {
+      "id": "review_notice",
+      "stageId": "review",
+      "order": 3,
+      "name": { "zh-CN": "发布通知与沟通", "en-US": "Release Notification and Communication" }
+    },
+    {
+      "id": "release_main",
+      "stageId": "release",
+      "order": 1,
+      "name": { "zh-CN": "正式发布", "en-US": "Formal Release" }
+    },
+    {
+      "id": "post_observe",
+      "stageId": "post_release",
+      "order": 1,
+      "name": { "zh-CN": "发布观察", "en-US": "Release Observation" }
+    },
+    {
+      "id": "post_backup",
+      "stageId": "post_release",
+      "order": 2,
+      "name": { "zh-CN": "数据备份", "en-US": "Data Backup" }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "artifact_test_plan_draft",
+      "type": "document",
+      "name": { "zh-CN": "测试方案初稿", "en-US": "Initial Test Plan" }
+    },
+    {
+      "id": "artifact_test_cases",
+      "type": "document",
+      "name": { "zh-CN": "测试用例", "en-US": "Test Cases" }
+    },
+    {
+      "id": "artifact_test_environment",
+      "type": "environment",
+      "name": { "zh-CN": "测试环境", "en-US": "Test Environment" }
+    },
+    {
+      "id": "artifact_development_environment",
+      "type": "environment",
+      "name": { "zh-CN": "开发环境", "en-US": "Development Environment" }
+    },
+    {
+      "id": "artifact_uc_actual_data",
+      "type": "data",
+      "name": { "zh-CN": "UC 实际数据", "en-US": "UC Actual Data" }
+    },
+    {
+      "id": "artifact_ms_pretest_result",
+      "type": "report",
+      "name": { "zh-CN": "MS 更新预测试结果", "en-US": "Microsoft Pre-test Result" }
+    },
+    {
+      "id": "artifact_cmit_test_request",
+      "type": "document",
+      "name": { "zh-CN": "CMIT 更新提测申请", "en-US": "CMIT Update Submission Request" }
+    },
+    {
+      "id": "artifact_issue_analysis_result",
+      "type": "report",
+      "name": { "zh-CN": "问题分析结果", "en-US": "Issue Analysis Result" }
+    },
+    {
+      "id": "artifact_release_note_draft",
+      "type": "document",
+      "name": { "zh-CN": "发布说明初稿", "en-US": "Release Note Draft" }
+    },
+    {
+      "id": "artifact_cmit_test_result",
+      "type": "report",
+      "name": { "zh-CN": "CMIT 更新测试结果", "en-US": "CMIT Update Test Result" }
+    },
+    {
+      "id": "artifact_test_report",
+      "type": "report",
+      "name": { "zh-CN": "测试报告", "en-US": "Test Report" }
+    },
+    {
+      "id": "artifact_release_approval",
+      "type": "record",
+      "name": { "zh-CN": "同意发布结论", "en-US": "Release Approval Conclusion" }
+    },
+    {
+      "id": "artifact_observation_result",
+      "type": "report",
+      "name": { "zh-CN": "观察结果", "en-US": "Observation Result" }
+    },
+    {
+      "id": "artifact_backup_data",
+      "type": "data",
+      "name": { "zh-CN": "数据备份", "en-US": "Data Backup" }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node_prep_plan_casewrite",
+      "roleId": "cmit_test_owner",
+      "stageId": "prep",
+      "branchId": "prep_plan",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "方案初稿和用例撰写", "en-US": "Draft Initial Plan and Write Test Cases" },
+      "outputIds": ["artifact_test_plan_draft", "artifact_test_cases"],
+      "status": "planned"
+    },
+    {
+      "id": "node_prep_build_env",
+      "roleId": "cmit_tester",
+      "stageId": "prep",
+      "branchId": "prep_env",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "搭建测试环境", "en-US": "Build Test Environment" },
+      "outputIds": ["artifact_test_environment"],
+      "status": "planned"
+    },
+    {
+      "id": "node_prep_server_maintenance",
+      "roleId": "cmit_dev",
+      "stageId": "prep",
+      "branchId": "prep_dev",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "服务器自动维护", "en-US": "Enable Server Auto-maintenance" },
+      "outputIds": ["artifact_development_environment"],
+      "status": "planned"
+    },
+    {
+      "id": "node_prep_env_self_check",
+      "roleId": "cmit_publisher",
+      "stageId": "prep",
+      "branchId": "prep_data",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "环境自检", "en-US": "Perform Environment Self-check" },
+      "status": "planned"
+    },
+    {
+      "id": "node_prep_uc_data_generate",
+      "roleId": "cmit_publisher",
+      "stageId": "prep",
+      "branchId": "prep_data",
+      "order": 2,
+      "type": "task",
+      "title": { "zh-CN": "UC 数据生成", "en-US": "Generate UC Data" },
+      "outputIds": ["artifact_uc_actual_data"],
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_package_release",
+      "roleId": "ms",
+      "stageId": "ms_test",
+      "branchId": "ms_release_notice",
+      "order": 1,
+      "type": "milestone",
+      "title": { "zh-CN": "微软更新包发布", "en-US": "Microsoft Update Package Release" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_release_notice",
+      "roleId": "cmit_pm",
+      "stageId": "ms_test",
+      "branchId": "ms_release_notice",
+      "order": 2,
+      "type": "task",
+      "title": { "zh-CN": "MS 更新发布通知", "en-US": "Microsoft Update Release Notice" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_pretest_apply",
+      "roleId": "cmit_publisher",
+      "stageId": "ms_test",
+      "branchId": "ms_release_notice",
+      "order": 3,
+      "type": "task",
+      "title": { "zh-CN": "发布预测试和说明预申请", "en-US": "Pre-test and Pre-apply Release Notes" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_finalize_test_plan",
+      "roleId": "cmit_test_owner",
+      "stageId": "ms_test",
+      "branchId": "ms_pretest",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "测试方案定稿", "en-US": "Finalize Test Plan" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_pretest",
+      "roleId": "cmit_tester",
+      "stageId": "ms_test",
+      "branchId": "ms_pretest",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "MS 更新预测试", "en-US": "Run Microsoft Update Pre-test" },
+      "outputIds": ["artifact_ms_pretest_result"],
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_analyze_result",
+      "roleId": "cmit_test_owner",
+      "stageId": "ms_test",
+      "branchId": "ms_pretest",
+      "order": 2,
+      "type": "task",
+      "title": { "zh-CN": "测试结果分析_测试负责人", "en-US": "Analyze Test Result_Owner" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_decide_normal",
+      "roleId": "cmit_test_owner",
+      "stageId": "ms_test",
+      "branchId": "ms_pretest",
+      "order": 3,
+      "type": "decision",
+      "title": { "zh-CN": "MS 更新是否正常", "en-US": "Is MS Update Normal?" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_cmit_make",
+      "roleId": "cmit_dev",
+      "stageId": "ms_test",
+      "branchId": "ms_build",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "CMIT 更新制作", "en-US": "Build CMIT Update" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_cmit_validate",
+      "roleId": "cmit_dev",
+      "stageId": "ms_test",
+      "branchId": "ms_build",
+      "order": 2,
+      "type": "task",
+      "title": { "zh-CN": "CMIT 更新验证", "en-US": "Validate CMIT Update" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_cmit_pretest_submit",
+      "roleId": "cmit_dev",
+      "stageId": "ms_test",
+      "branchId": "ms_build",
+      "order": 3,
+      "type": "task",
+      "title": { "zh-CN": "CMIT 更新提测", "en-US": "Submit CMIT Update for Testing" },
+      "outputIds": ["artifact_cmit_test_request"],
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_issue_analysis_reviewer",
+      "roleId": "cmit_reviewer",
+      "stageId": "ms_test",
+      "branchId": "ms_issue",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "MS 更新问题分析_审核者", "en-US": "MS Update Issue Analysis_Reviewer" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_issue_analysis_pm",
+      "roleId": "cmit_pm",
+      "stageId": "ms_test",
+      "branchId": "ms_issue",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "MS 更新问题分析_项目经理", "en-US": "Project-level MS Update Issue Analysis_PM" },
+      "outputIds": ["artifact_issue_analysis_result"],
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_prerelease_doc_review",
+      "roleId": "cmit_doc_reviewer",
+      "stageId": "ms_test",
+      "branchId": "ms_doc",
+      "order": 1,
+      "type": "review",
+      "title": { "zh-CN": "预发布说明审核", "en-US": "Review Pre-release Notes" },
+      "status": "planned"
+    },
+    {
+      "id": "node_ms_doc_publish_decision",
+      "roleId": "cmit_doc_reviewer",
+      "stageId": "ms_test",
+      "branchId": "ms_doc",
+      "order": 2,
+      "type": "decision",
+      "title": { "zh-CN": "更新包说明可发布", "en-US": "Update Package Notes Ready for Release" },
+      "outputIds": ["artifact_release_note_draft"],
+      "status": "planned"
+    },
+    {
+      "id": "node_cmit_predownload_notice",
+      "roleId": "cmit_pm",
+      "stageId": "cmit_test",
+      "branchId": "cmit_execute",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "CMIT 更新预下载通知", "en-US": "Notify CMIT Update Pre-download" },
+      "status": "planned"
+    },
+    {
+      "id": "node_cmit_predownload",
+      "roleId": "cmit_publisher",
+      "stageId": "cmit_test",
+      "branchId": "cmit_preload",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "CMIT 更新预下载", "en-US": "Perform CMIT Update Pre-download" },
+      "status": "planned"
+    },
+    {
+      "id": "node_cmit_update_test",
+      "roleId": "cmit_tester",
+      "stageId": "cmit_test",
+      "branchId": "cmit_execute",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "CMIT 更新测试", "en-US": "Run CMIT Update Test" },
+      "outputIds": ["artifact_cmit_test_result"],
+      "status": "planned"
+    },
+    {
+      "id": "node_cmit_analyze_result",
+      "roleId": "cmit_test_owner",
+      "stageId": "cmit_test",
+      "branchId": "cmit_execute",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "测试结果分析_测试负责人", "en-US": "Analyze CMIT Test Result_Owner" },
+      "status": "planned"
+    },
+    {
+      "id": "node_cmit_decide_normal",
+      "roleId": "cmit_test_owner",
+      "stageId": "cmit_test",
+      "branchId": "cmit_execute",
+      "order": 2,
+      "type": "decision",
+      "title": { "zh-CN": "CMIT 更新是否正常", "en-US": "Is CMIT Update Normal?" },
+      "status": "planned"
+    },
+    {
+      "id": "node_cmit_issue_analysis_reviewer",
+      "roleId": "cmit_reviewer",
+      "stageId": "cmit_test",
+      "branchId": "cmit_issue",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "CMIT 更新问题分析_审核者", "en-US": "Analyze CMIT Update Testing Issue_Reviewer" },
+      "status": "planned"
+    },
+    {
+      "id": "node_cmit_issue_analysis_pm",
+      "roleId": "cmit_pm",
+      "stageId": "cmit_test",
+      "branchId": "cmit_issue",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "CMIT 更新问题分析_项目经理", "en-US": "Project-level CMIT Update Issue Analysis_PM" },
+      "outputIds": ["artifact_issue_analysis_result"],
+      "status": "planned"
+    },
+    {
+      "id": "node_report_write",
+      "roleId": "cmit_test_owner",
+      "stageId": "report",
+      "branchId": "report_main",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "填写测试报告", "en-US": "Write Test Report" },
+      "outputIds": ["artifact_test_report"],
+      "status": "planned"
+    },
+    {
+      "id": "node_report_publish",
+      "roleId": "cmit_test_owner",
+      "stageId": "report",
+      "branchId": "report_main",
+      "order": 2,
+      "type": "task",
+      "title": { "zh-CN": "测试报告发布", "en-US": "Publish Test Report" },
+      "status": "planned"
+    },
+    {
+      "id": "node_report_check_work",
+      "roleId": "cmit_publisher",
+      "stageId": "report",
+      "branchId": "report_check",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "发布检查工作", "en-US": "Perform Release Check Work" },
+      "status": "planned"
+    },
+{
+      "id": "node_review_verify_report",
+      "roleId": "cmit_pm",
+      "stageId": "review",
+      "branchId": "review_doc",
+      "order": 1,
+      "type": "review",
+      "title": { "zh-CN": "测试报告核对", "en-US": "Verify Test Report" },
+      "status": "planned"
+    },
+    {
+      "id": "node_review_submit",
+      "roleId": "cmit_pm",
+      "stageId": "review",
+      "branchId": "review_doc",
+      "order": 2,
+      "type": "task",
+      "title": { "zh-CN": "提交报告审核", "en-US": "Submit Report for Review" },
+      "status": "planned"
+    },
+    {
+      "id": "node_review_release_audit",
+      "roleId": "cmit_reviewer",
+      "stageId": "review",
+      "branchId": "review_release",
+      "order": 1,
+      "type": "review",
+      "title": { "zh-CN": "审核是否发布", "en-US": "Review Whether to Release" },
+      "status": "planned"
+    },
+    {
+      "id": "node_review_release_decision",
+      "roleId": "cmit_reviewer",
+      "stageId": "review",
+      "branchId": "review_release",
+      "order": 2,
+      "type": "decision",
+      "title": { "zh-CN": "同意发布", "en-US": "Approve Release" },
+      "outputIds": ["artifact_release_approval"],
+      "status": "planned"
+    },
+    {
+      "id": "node_review_update_notice",
+      "roleId": "cmit_pm",
+      "stageId": "review",
+      "branchId": "review_notice",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "更新发布通知", "en-US": "Send Update Release Notice" },
+      "status": "planned"
+    },
+    {
+      "id": "node_review_department_sync",
+      "roleId": "cmit_pm",
+      "stageId": "review",
+      "branchId": "review_notice",
+      "order": 2,
+      "type": "task",
+      "title": { "zh-CN": "各部门通知和后续沟通", "en-US": "Notify Departments and Follow Up" },
+      "status": "planned"
+    },
+    {
+      "id": "node_review_ms_issue_process",
+      "roleId": "cmit_pm",
+      "stageId": "review",
+      "branchId": "review_notice",
+      "order": 3,
+      "type": "milestone",
+      "title": { "zh-CN": "微软更新问题处理流程", "en-US": "Microsoft Update Issue Handling Flow" },
+      "status": "planned"
+    },
+    {
+      "id": "node_release_online_offline",
+      "roleId": "cmit_publisher",
+      "stageId": "release",
+      "branchId": "release_main",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "离线、在线发布", "en-US": "Perform Offline and Online Release" },
+      "status": "planned"
+    },
+    {
+      "id": "node_release_notify_customer",
+      "roleId": "cmit_publisher",
+      "stageId": "release",
+      "branchId": "release_main",
+      "order": 2,
+      "type": "task",
+      "title": { "zh-CN": "通知客户", "en-US": "Notify Customers" },
+      "status": "planned"
+    },
+    {
+      "id": "node_release_package_publish",
+      "roleId": "cmit_publisher",
+      "stageId": "release",
+      "branchId": "release_main",
+      "order": 3,
+      "type": "milestone",
+      "title": { "zh-CN": "CMIT 更新包发布", "en-US": "CMIT Update Package Release" },
+      "status": "planned"
+    },
+    {
+      "id": "node_post_observe_release",
+      "roleId": "cmit_publisher",
+      "stageId": "post_release",
+      "branchId": "post_observe",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "观察发布情况", "en-US": "Observe Release Status" },
+      "outputIds": ["artifact_observation_result"],
+      "status": "planned"
+    },
+    {
+      "id": "node_post_backup_data",
+      "roleId": "cmit_tester",
+      "stageId": "post_release",
+      "branchId": "post_backup",
+      "order": 1,
+      "type": "task",
+      "title": { "zh-CN": "测试数据备份", "en-US": "Test Data Backup" },
+      "outputIds": ["artifact_backup_data"],
+      "status": "planned"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_prep_1",
+      "from": "node_prep_plan_casewrite",
+      "to": "node_ms_finalize_test_plan",
+      "type": "handoff",
+      "label": {
+        "zh-CN": "方案初稿进入 MS 测试阶段",
+        "en-US": "Plan draft moves into Microsoft testing"
+      }
+    },
+    {
+      "id": "edge_prep_2",
+      "from": "node_prep_build_env",
+      "to": "node_ms_pretest",
+      "type": "dependency",
+      "label": {
+        "zh-CN": "依赖测试环境",
+        "en-US": "Depends on the test environment"
+      }
+    },
+    {
+      "id": "edge_prep_3",
+      "from": "node_prep_server_maintenance",
+      "to": "node_ms_cmit_make",
+      "type": "dependency",
+      "label": {
+        "zh-CN": "依赖开发环境",
+        "en-US": "Depends on the development environment"
+      }
+    },
+    {
+      "id": "edge_prep_4",
+      "from": "node_prep_env_self_check",
+      "to": "node_prep_uc_data_generate",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_prep_5",
+      "from": "node_prep_uc_data_generate",
+      "to": "node_cmit_update_test",
+      "type": "sequence",
+      "sourceSide": "right",
+      "targetSide": "right",
+      "label": {
+        "zh-CN": "提供 UC 实际数据",
+        "en-US": "Provide UC actual data"
+      }
+    },
+    {
+      "id": "edge_ms_1",
+      "from": "node_ms_package_release",
+      "to": "node_ms_release_notice",
+      "type": "sequence",
+      "targetSide": "left"
+    },
+    {
+      "id": "edge_ms_2",
+      "from": "node_ms_package_release",
+      "to": "node_ms_pretest",
+      "targetSide": "top",
+      "type": "handoff",
+      "label": {
+        "zh-CN": "微软更新包进入预测试",
+        "en-US": "Microsoft package enters pre-test"
+      }
+    },
+    {
+      "id": "edge_ms_3",
+      "from": "node_ms_package_release",
+      "to": "node_ms_cmit_make",
+      "type": "handoff",
+      "label": {
+        "zh-CN": "同步进入 CMIT 构建",
+        "en-US": "Move into CMIT build in parallel"
+      }
+    },
+    {
+      "id": "edge_ms_4",
+      "from": "node_ms_release_notice",
+      "to": "node_ms_finalize_test_plan",
+      "targetSide": "top",
+      "type": "sequence",
+      "sourceSide": "bottom"
+    },
+    {
+      "id": "edge_ms_4b",
+      "from": "node_ms_pretest_apply",
+      "to": "node_ms_prerelease_doc_review",
+      "type": "sequence",
+      "sourceSide": "left",
+      "targetSide": "top"
+    },
+    {
+      "id": "edge_ms_5",
+      "from": "node_ms_finalize_test_plan",
+      "sourceSide": "right",
+      "targetSide": "left",
+      "to": "node_ms_pretest",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_ms_6",
+      "from": "node_ms_pretest",
+      "to": "node_ms_analyze_result",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_ms_7",
+      "from": "node_ms_analyze_result",
+      "to": "node_ms_decide_normal",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_ms_8",
+      "from": "node_ms_cmit_make",
+      "to": "node_ms_cmit_validate",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_ms_9",
+      "from": "node_ms_cmit_validate",
+      "to": "node_ms_cmit_pretest_submit",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_ms_10",
+      "from": "node_ms_prerelease_doc_review",
+      "to": "node_ms_doc_publish_decision",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_ms_11",
+      "from": "node_ms_decide_normal",
+      "to": "node_cmit_analyze_result",
+      "type": "handoff",
+      "label": {
+        "zh-CN": "是（正常）",
+        "en-US": "Yes (Normal)"
+      }
+    },
+    {
+      "id": "edge_ms_12",
+      "from": "node_ms_decide_normal",
+      "to": "node_ms_issue_analysis_reviewer",
+      "targetSide": "top",
+      "type": "feedback",
+      "label": {
+        "zh-CN": "否（异常）",
+        "en-US": "No (Abnormal)"
+      }
+    },
+    {
+      "id": "edge_ms_13",
+      "from": "node_ms_decide_normal",
+      "to": "node_ms_issue_analysis_pm",
+      "targetSide": "top",
+      "type": "feedback"
+    },
+    {
+      "id": "edge_ms_14",
+      "from": "node_ms_issue_analysis_pm",
+      "to": "node_ms_cmit_make",
+      "type": "feedback",
+      "sourceSide": "left",
+      "targetSide": "right",
+      "label": {
+        "zh-CN": "分析后返回开发修正",
+        "en-US": "Return to development for correction"
+      }
+    },
+    {
+      "id": "edge_ms_15",
+      "from": "node_ms_doc_publish_decision",
+      "to": "node_release_online_offline",
+      "sourceSide": "left",
+      "targetSide": "left",
+      "type": "dependency",
+      "label": {
+        "zh-CN": "形成发布说明初稿",
+        "en-US": "Generate release note draft"
+      }
+    },
+    {
+      "id": "edge_ms_16",
+      "from": "node_ms_doc_publish_decision",
+      "to": "node_ms_pretest_apply",
+      "type": "feedback",
+      "sourceSide": "right",
+      "targetSide": "bottom",
+      "label": {
+        "zh-CN": "否（重新申请）",
+        "en-US": "No (Re-apply)"
+      }
+    },
+    {
+      "id": "edge_cmit_1",
+      "from": "node_cmit_predownload_notice",
+      "to": "node_cmit_predownload",
+      "sourceSide": "right",
+      "targetSide": "top",
+      "type": "handoff"
+    },
+    {
+      "id": "edge_cmit_2",
+      "from": "node_ms_cmit_pretest_submit",
+      "to": "node_cmit_update_test",
+      "sourceSide": "bottom",
+      "targetSide": "right",
+      "type": "handoff",
+      "label": {
+        "zh-CN": "提测通过，进入 CMIT 测试",
+        "en-US": "Submission accepted, enter CMIT testing"
+      }
+    },
+    {
+      "id": "edge_cmit_3",
+      "from": "node_ms_cmit_pretest_submit",
+      "to": "node_cmit_predownload_notice",
+      "sourceSide": "bottom",
+      "targetSide": "top",
+      "type": "sequence",
+      "label": {
+        "zh-CN": "提测通过，通知预下载",
+        "en-US": "Submission accepted, notify pre-download"
+      }
+    },
+    {
+      "id": "edge_cmit_4",
+      "from": "node_cmit_predownload",
+      "to": "node_report_check_work",
+      "type": "dependency",
+      "label": {
+        "zh-CN": "支持后续发布检查",
+        "en-US": "Supports later release checks"
+      }
+    },
+    {
+      "id": "edge_cmit_5",
+      "from": "node_cmit_update_test",
+      "to": "node_cmit_analyze_result",
+      "sourceSide": "left",
+      "targetSide": "right",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_cmit_6",
+      "from": "node_cmit_analyze_result",
+      "to": "node_cmit_decide_normal",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_cmit_7",
+      "from": "node_cmit_decide_normal",
+      "to": "node_report_write",
+      "type": "handoff",
+      "label": {
+        "zh-CN": "正常，进入报告阶段",
+        "en-US": "Normal, proceed to reporting"
+      }
+    },
+    {
+      "id": "edge_cmit_8",
+      "from": "node_cmit_decide_normal",
+      "to": "node_cmit_issue_analysis_reviewer",
+      "type": "feedback",
+      "targetSide": "top",
+      "label": {
+        "zh-CN": "否（异常）",
+        "en-US": "No (Abnormal)"
+      }
+    },
+    {
+      "id": "edge_cmit_9",
+      "from": "node_cmit_issue_analysis_reviewer",
+      "to": "node_cmit_issue_analysis_pm",
+      "sourceSide": "right",
+      "targetSide": "left",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_cmit_10",
+      "from": "node_cmit_issue_analysis_pm",
+      "to": "node_report_write",
+      "type": "feedback",
+      "sourceSide": "bottom",
+      "targetSide": "right",
+      "label": {
+        "zh-CN": "分析结果进入测试报告阶段",
+        "en-US": "Analysis results enter the test report phase"
+      }
+    },
+    {
+      "id": "edge_cmit_11",
+      "from": "node_cmit_issue_analysis_reviewer",
+      "to": "node_report_write",
+      "type": "feedback",
+      "label": {
+        "zh-CN": "异常转报告",
+        "en-US": "Issue to Report"
+      }
+    },
+    {
+      "id": "edge_cmit_12",
+      "from": "node_cmit_decide_normal",
+      "to": "node_ms_issue_analysis_pm",
+      "type": "feedback",
+      "targetSide": "top",
+      "label": {
+        "zh-CN": "否（异常）",
+        "en-US": "No (Abnormal)"
+      }
+    },
+    {
+      "id": "edge_report_1",
+      "from": "node_report_write",
+      "to": "node_report_publish",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_report_3",
+      "from": "node_report_publish",
+      "to": "node_review_verify_report",
+      "sourceSide": "bottom",
+      "targetSide": "left",
+      "type": "handoff"
+    },
+    {
+      "id": "edge_report_4",
+      "from": "node_report_check_work",
+      "to": "node_release_online_offline",
+      "type": "sequence",
+      "label": {
+        "zh-CN": "发布检查完成，进入发布",
+        "en-US": "Release check complete, proceed to release"
+      }
+    },
+    {
+      "id": "edge_review_1",
+      "from": "node_review_verify_report",
+      "to": "node_review_submit",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_review_2",
+      "from": "node_review_submit",
+      "to": "node_review_release_audit",
+      "sourceSide": "bottom",
+      "targetSide": "right",
+      "type": "handoff"
+    },
+    {
+      "id": "edge_review_3",
+      "from": "node_review_release_audit",
+      "to": "node_review_release_decision",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_review_4",
+      "from": "node_review_release_decision",
+      "to": "node_review_update_notice",
+      "sourceSide": "right",
+      "targetSide": "left",
+      "type": "handoff",
+      "label": {
+        "zh-CN": "同意发布",
+        "en-US": "Approved for release"
+      }
+    },
+    {
+      "id": "edge_review_5",
+      "from": "node_review_release_decision",
+      "to": "node_review_department_sync",
+      "sourceSide": "bottom",
+      "targetSide": "left",
+      "type": "feedback",
+      "label": {
+        "zh-CN": "不同意发布，进入微软更新问题处理流程",
+        "en-US": "Release not approved，Enter Microsoft update issue handling flow"
+      }
+    },
+    {
+      "id": "edge_review_7",
+      "from": "node_review_department_sync",
+      "to": "node_review_ms_issue_process",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_review_9",
+      "from": "node_review_update_notice",
+      "to": "node_release_online_offline",
+      "type": "sequence",
+      "sourceSide": "right",
+      "targetSide": "top",
+      "label": {
+        "zh-CN": "通知 CMIT 更新发布",
+        "en-US": "Notify CMIT update to release"
+      }
+    },
+    {
+      "id": "edge_release_1",
+      "from": "node_release_online_offline",
+      "to": "node_release_notify_customer",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_release_2",
+      "from": "node_release_notify_customer",
+      "to": "node_release_package_publish",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_post_1",
+      "from": "node_release_package_publish",
+      "to": "node_post_observe_release",
+      "type": "sequence"
+    },
+    {
+      "id": "edge_post_2",
+      "from": "node_cmit_update_test",
+      "to": "node_post_backup_data",
+      "sourceSide": "bottom",
+      "targetSide": "top",
+      "type": "sequence",
+      "label": {
+        "zh-CN": "发布完成后进行备份",
+        "en-US": "Back up data after release completes"
+      }
+    },
+    {
+      "id": "edge_ms_17",
+      "from": "node_ms_issue_analysis_reviewer",
+      "to": "node_ms_issue_analysis_pm",
+      "type": "feedback",
+      "label": {
+        "zh-CN": "异常转报告",
+        "en-US": "Issue to Report"
+      }
+    },
+    {
+      "id": "edge_ms_18",
+      "from": "node_ms_issue_analysis_pm",
+      "to": "node_report_write",
+      "type": "feedback",
+      "label": {
+        "zh-CN": "异常转报告",
+        "en-US": "Issue to Report"
+      }
+    }
+  ]
+}

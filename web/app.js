@@ -1,4 +1,6 @@
-﻿const state = {
+﻿import { renderSwimlaneDiagram, getLocalizedText } from "./modules/swimlaneDiagram.js";
+
+const state = {
   dashboard: null,
   rdAnalysis: null,
   months: [],
@@ -8,7 +10,9 @@
   serviceFiles: [],
   dashboardTimelineMonth: null,
   dashboardTimelineItems: [],
-  actionSummaryChartCounter: 0
+  actionSummaryChartCounter: 0,
+  swimlaneData: null,
+  swimlaneLocale: "zh-CN"
 };
 
 async function fetchJson(url) {
@@ -1005,6 +1009,50 @@ async function loadAlerts() {
   renderAlerts(state.alerts);
 }
 
+function renderSwimlaneMeta() {
+  const meta = document.getElementById("swimlane-meta");
+  if (!meta || !state.swimlaneData) {
+    return;
+  }
+
+  const locale = state.swimlaneLocale;
+  const fallbackLocale = state.swimlaneData.meta?.defaultLocale || "zh-CN";
+  const description = getLocalizedText(state.swimlaneData.meta?.description, locale, fallbackLocale);
+  const roleCount = state.swimlaneData.roles?.length || 0;
+  const stageCount = state.swimlaneData.stages?.length || 0;
+  const nodeCount = state.swimlaneData.nodes?.length || 0;
+
+  meta.innerHTML = `
+    <div class="badge subtle">${escapeHtml(description)}</div>
+    <div class="badge subtle">${locale === "en-US" ? `Roles ${roleCount} / Stages ${stageCount} / Nodes ${nodeCount}` : `角色 ${roleCount} / 阶段 ${stageCount} / 节点 ${nodeCount}`}</div>
+  `;
+}
+
+function renderSwimlane() {
+  const container = document.getElementById("swimlane-diagram");
+  if (!container || !state.swimlaneData) {
+    return;
+  }
+
+  renderSwimlaneMeta();
+  renderSwimlaneDiagram(container, state.swimlaneData, {
+    locale: state.swimlaneLocale
+  });
+}
+
+async function loadSwimlane() {
+  state.swimlaneData = await fetchJson("/data/swimlane/workflow.cmit-update.example.json");
+  renderSwimlane();
+}
+
+function updateSwimlaneLocale(locale) {
+  state.swimlaneLocale = locale;
+  document.querySelectorAll("[data-swimlane-locale]").forEach(button => {
+    button.classList.toggle("active", button.dataset.swimlaneLocale === locale);
+  });
+  renderSwimlane();
+}
+
 function bindEvents() {
   document.querySelectorAll(".tab-button").forEach(button => {
     button.addEventListener("click", () => {
@@ -1023,6 +1071,12 @@ function bindEvents() {
   document.getElementById("dashboard-timeline-month-select")?.addEventListener("change", event => {
     state.dashboardTimelineMonth = event.target.value;
     refreshDashboardTimeline();
+  });
+
+  document.querySelectorAll("[data-swimlane-locale]").forEach(button => {
+    button.addEventListener("click", () => {
+      updateSwimlaneLocale(button.dataset.swimlaneLocale);
+    });
   });
 
   document.addEventListener("mouseover", event => {
@@ -1089,6 +1143,7 @@ async function init() {
   await loadCurrentMonth();
   await loadCompare();
   await loadAlerts();
+  await loadSwimlane();
 }
 
 init().catch(error => {
